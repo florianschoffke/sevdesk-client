@@ -1,0 +1,114 @@
+/* Authentication View */
+.auth-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-background) 100%);
+  padding: var(--space-xl);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-surface);
+  padding: var(--space-4xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border);
+}
+
+.auth-card .logo {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.auth-card .logo img {
+  max-width: 120px;
+  height: auto;
+}
+
+.auth-card h1 {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  color: var(--color-text);
+  font-size: var(--font-size-2xl);
+}
+
+.auth-card .subtitle {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+}
+
+.auth-form {
+  margin-top: var(--space-xl);
+}
+
+.auth-form .form-group:last-of-type {
+  margin-bottom: var(--space-2xl);
+}
+
+.auth-form .btn-primary {
+  width: 100%;
+  justify-content: center;
+  font-size: var(--font-size-base);
+  padding: var(--space-lg) var(--space-xl);
+}
+
+/* Connection Status */
+.connection-test {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-gray-50);
+}
+
+.connection-test.success {
+  border-color: var(--color-success);
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.connection-test.error {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.connection-test.testing {
+  border-color: var(--color-info);
+  background-color: var(--color-info-light);
+  color: var(--color-info);
+}
+
+/* Help Text */
+.auth-help {
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.auth-help h3 {
+  font-size: var(--font-size-base);
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+
+.auth-help p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.auth-help a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.auth-help a:hover {
+  color: var(--color-primary-hover);
+}

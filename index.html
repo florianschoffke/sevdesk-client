@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SevDesk API Client</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/src/css/main.css">
+    <meta name="description" content="Modern web client for SevDesk API with bulk invoice creation">
+</head>
+<body>
+    <div id="app" class="app">
+        <!-- Loading screen -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-spinner"></div>
+            <p>Loading SevDesk Client...</p>
+        </div>
+
+        <!-- Main application container -->
+        <div id="app-container" class="app-container hidden">
+            <!-- Dynamic content will be rendered here -->
+        </div>
+
+        <!-- Global loading overlay -->
+        <div id="global-loading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p id="loading-message">Processing...</p>
+        </div>
+
+        <!-- Toast notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script type="module" src="/src/js/main.js"></script>
+</body>
+</html>

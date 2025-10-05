@@ -1,0 +1,317 @@
+/* Responsive Design Utilities */
+
+/* Mobile First Breakpoints */
+/* sm: 640px and up */
+/* md: 768px and up */
+/* lg: 1024px and up */
+/* xl: 1280px and up */
+/* 2xl: 1536px and up */
+
+/* Container Responsive */
+.container {
+  width: 100%;
+  padding-left: var(--space-lg);
+  padding-right: var(--space-lg);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 767px) {
+  .container {
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+
+  /* Typography */
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  h3 {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Form Adjustments */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Card Adjustments */
+  .auth-card {
+    margin: var(--space-2xl) auto;
+    padding: var(--space-2xl);
+  }
+
+  .card-body {
+    padding: var(--space-xl);
+  }
+
+  /* Grid Adjustments */
+  .modules-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+
+  .results-summary {
+    grid-template-columns: 1fr;
+  }
+
+  /* Header Adjustments */
+  .app-header {
+    flex-direction: column;
+    gap: var(--space-lg);
+    text-align: center;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Module Header */
+  .module-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-lg);
+  }
+
+  /* Bulk Invoice Adjustments */
+  .method-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .batch-actions {
+    flex-direction: column;
+  }
+
+  /* Toast Mobile */
+  .toast-container {
+    top: var(--space-lg);
+    right: var(--space-lg);
+    left: var(--space-lg);
+    max-width: none;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .position-row {
+    grid-template-columns: 2fr 1fr 1fr auto;
+  }
+}
+
+/* Desktop Responsive */
+@media (min-width: 1024px) {
+  .bulk-invoices-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+
+  .invoice-form-container {
+    margin-bottom: 0;
+  }
+
+  .batch-preview {
+    position: sticky;
+    top: var(--space-xl);
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1280px) {
+  .container {
+    padding-left: var(--space-xl);
+    padding-right: var(--space-xl);
+  }
+
+  .modules-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Extra Large Desktop */
+@media (min-width: 1536px) {
+  .modules-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Responsive Display Utilities */
+@media (max-width: 639px) {
+  .hidden-mobile { display: none !important; }
+}
+
+@media (min-width: 640px) {
+  .show-mobile { display: none !important; }
+}
+
+@media (max-width: 767px) {
+  .hidden-tablet { display: none !important; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .show-tablet { display: block !important; }
+  .hidden-tablet { display: none !important; }
+}
+
+@media (max-width: 1023px) {
+  .hidden-desktop { display: none !important; }
+}
+
+@media (min-width: 1024px) {
+  .show-desktop { display: block !important; }
+  .show-mobile, .show-tablet { display: none !important; }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+
+  .btn {
+    border: 1px solid black;
+    background: transparent;
+  }
+
+  .card {
+    border: 1px solid black;
+    box-shadow: none;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .loading-spinner {
+    animation: none;
+  }
+
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin {
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #000000;
+    --color-text: #000000;
+    --color-background: #ffffff;
+  }
+
+  .btn {
+    border-width: 2px;
+  }
+
+  .form-input,
+  .form-select {
+    border-width: 2px;
+  }
+}
+
+/* Focus Visible Support */
+@supports selector(:focus-visible) {
+  .btn:focus {
+    outline: none;
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .form-input:focus,
+  .form-select:focus {
+    outline: none;
+  }
+
+  .form-input:focus-visible,
+  .form-select:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
