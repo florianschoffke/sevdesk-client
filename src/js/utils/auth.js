@@ -9,7 +9,7 @@ export class AuthManager extends EventEmitter {
     this.apiUrl = 'https://my.sevdesk.de/api/v1';
     this.api = null;
     this.user = null;
-    this.isAuthenticated = false;
+    this.authenticated = false;
   }
 
   async init() {
@@ -17,13 +17,22 @@ export class AuthManager extends EventEmitter {
     this.loadStoredCredentials();
     
     if (this.apiKey) {
-      // Test stored credentials
+      // Test stored credentials with timeout
       try {
-        await this.validateCredentials();
+        console.log('Testing stored credentials...');
+        await Promise.race([
+          this.validateCredentials(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Credential validation timeout')), 5000)
+          )
+        ]);
+        console.log('Stored credentials are valid');
       } catch (error) {
-        console.warn('Stored credentials invalid:', error);
+        console.warn('Stored credentials invalid or timed out:', error);
         this.clearCredentials();
       }
+    } else {
+      console.log('No stored credentials found');
     }
   }
 
@@ -56,7 +65,7 @@ export class AuthManager extends EventEmitter {
       this.apiKey = apiKey;
       this.storeCredentials();
       
-      this.isAuthenticated = true;
+      this.authenticated = true;
       this.emit('authenticated', this.user);
       
       return true;
@@ -81,13 +90,13 @@ export class AuthManager extends EventEmitter {
           apiUrl: this.apiUrl,
           connectedAt: new Date().toISOString()
         };
-        this.isAuthenticated = true;
+        this.authenticated = true;
         return true;
       } else {
         throw new Error('Invalid API response');
       }
     } catch (error) {
-      this.isAuthenticated = false;
+      this.authenticated = false;
       throw new Error('Invalid API credentials or connection failed');
     }
   }
@@ -112,7 +121,7 @@ export class AuthManager extends EventEmitter {
     this.apiKey = null;
     this.api = null;
     this.user = null;
-    this.isAuthenticated = false;
+    this.authenticated = false;
   }
 
   logout() {
@@ -129,7 +138,7 @@ export class AuthManager extends EventEmitter {
   }
 
   isAuthenticated() {
-    return this.isAuthenticated && this.api !== null;
+    return this.authenticated && this.api !== null;
   }
 
   getApiKey() {

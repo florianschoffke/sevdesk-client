@@ -24,9 +24,7 @@ export class App {
 
   async init() {
     try {
-      this.showLoadingScreen();
-      
-      // Initialize core services
+      // Initialize core services (simplified, no loading screen needed)
       await this.initializeServices();
       
       // Register views
@@ -39,7 +37,9 @@ export class App {
       this.initializeRouting();
       
       this.isInitialized = true;
-      this.hideLoadingScreen();
+      
+      // Show dashboard since we know we're authenticated at this point
+      await this.showView('dashboard');
       
       console.log('SevDesk Client initialized successfully');
       
@@ -51,14 +51,14 @@ export class App {
   }
 
   async initializeServices() {
-    // Initialize authentication manager
-    await this.authManager.init();
-    
     // Initialize toast system
     Toast.init();
     
     // Initialize loading manager
     this.loadingManager.init();
+    
+    // Initialize authentication manager (credentials should already be validated)
+    await this.authManager.init();
   }
 
   registerViews() {
@@ -98,12 +98,12 @@ export class App {
     this.router.start();
   }
 
-  showInitialView() {
+  async showInitialView() {
     // Determine which view to show based on auth state
     if (this.authManager.isAuthenticated()) {
-      this.router.navigate('/dashboard');
+      await this.showView('dashboard');
     } else {
-      this.router.navigate('/auth');
+      await this.showView('auth');
     }
   }
 
@@ -210,12 +210,12 @@ export class App {
     const appContainer = document.getElementById('app-container');
     
     if (loadingScreen) {
-      setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-      }, 500); // Small delay for smooth transition
+      loadingScreen.classList.add('hidden');
     }
     
-    if (appContainer) appContainer.classList.remove('hidden');
+    if (appContainer) {
+      appContainer.classList.remove('hidden');
+    }
   }
 
   showError(message) {
@@ -240,6 +240,10 @@ export class App {
   // Public API methods
   getAuthManager() {
     return this.authManager;
+  }
+
+  getApiClient() {
+    return this.authManager ? this.authManager.getAPI() : null;
   }
 
   getRouter() {
