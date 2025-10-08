@@ -4,6 +4,7 @@ node_modules/
 # Ignore build output
 dist/
 build/
+transactions.db
 
 # Ignore environment files
 .env
@@ -43,6 +44,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+*.pyc
 
 # Ignore coverage directory used by tools like istanbul
 coverage/
