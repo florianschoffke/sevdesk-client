@@ -2,17 +2,21 @@
 """
 Create vouchers for Spenden (Donations) transactions.
 
-This script finds open incoming transactions (amount > 0) containing "Spende" 
+This script finds open incoming transactions (amount > 0) with donation-related keywords
 in the payment purpose and creates vouchers for them.
+
+Donation keywords: "Spende", "SPENDE", "Tobi Zimmermann", "Unterstützung", "Gemeindespende",
+"für die Gemeinde", "MONATLICHE SPENDE", "GEMEINDE", "Spends", "Offering", 
+starts with "Monatsspende", "GEMEINDE SPENDE"
 
 Four types of donations:
 1. Mission donations: purpose contains "Mission" or "Missionar" 
    → Cost Centre: "Spendeneingänge Missionare"
 2. Jeske donations: purpose contains "Artur Jeske"
    → Cost Centre: "Jeske (Durchlaufende Posten)"
-3. Tobias donations: purpose contains "Spende Tobias Zimmermann"
+3. Tobias donations: purpose contains "Spende Tobias Zimmermann" or "Tobi Zimmermann"
    → Cost Centre: "Tobias Zimmermann (Spende für Tobias)"
-4. General donations: all others
+4. General donations: all others (including "Unterstützung", "Gemeindespende", etc.)
    → Cost Centre: "Spendeneingänge Konto"
    
 All use Accounting Type: "Spendeneingang"
@@ -27,7 +31,7 @@ from sevdesk.client import SevDeskClient
 from database.db import TransactionDB
 from reload_data import reload_all_data
 from voucher_utils import (
-    generate_voucher_number,
+    generate_voucher_numbers,
     build_voucher_plan_markdown,
     print_console_summary,
     print_voucher_table,
@@ -83,7 +87,8 @@ def determine_donation_type_and_cost_centre(
     if 'Artur Jeske' in purpose:
         return ('jeske', cost_centres['jeske'])
     
-    if 'Spende Tobias Zimmermann' in purpose:
+    # Check for Tobias Zimmermann donations (multiple patterns)
+    if 'Spende Tobias Zimmermann' in purpose or 'Tobi Zimmermann' in purpose:
         return ('tobias', cost_centres['tobias'])
     
     # Check for mission-related keywords
@@ -138,6 +143,12 @@ def main():
     print("=" * 80)
     print()
     
+    # Initialize API client early (needed for voucher numbering)
+    print(f"Connecting to SevDesk API at {api_url}...")
+    client = SevDeskClient(api_key=api_key, base_url=api_url)
+    print("✓ Connected")
+    print()
+    
     # Initialize database
     print(f"Opening database: {db_path}")
     with TransactionDB(db_path=db_path) as db:
@@ -189,20 +200,43 @@ def main():
             payment_purpose = txn.get('paymt_purpose', '') or ''
             amount = float(txn.get('amount', 0))
             
-            # Must be income (positive) and contain "Spende"
-            if amount > 0 and 'Spende' in payment_purpose:
-                spenden_transactions.append(txn)
+            # Must be income (positive) and match one of the donation patterns
+            if amount > 0:
+                is_spende = (
+                    'Spende' in payment_purpose or 
+                    'SPENDE' in payment_purpose or
+                    'Tobi Zimmermann' in payment_purpose or
+                    'Unterstützung' in payment_purpose or
+                    'Unterstuetzung' in payment_purpose or
+                    'Gemeindespende' in payment_purpose or
+                    'für die Gemeinde' in payment_purpose or
+                    'MONATLICHE SPENDE' in payment_purpose or
+                    'GEMEINDE' in payment_purpose or
+                    'Spends' in payment_purpose or
+                    'Offering' in payment_purpose or
+                    payment_purpose.startswith('Monatsspende') or
+                    'GEMEINDE SPENDE' in payment_purpose
+                )
+                
+                if is_spende:
+                    spenden_transactions.append(txn)
         
-        print(f"✓ Found {len(spenden_transactions)} donation transactions (income with 'Spende')")
+        print(f"✓ Found {len(spenden_transactions)} donation transactions")
         print()
         
         if not spenden_transactions:
             print("No matching transactions found. Exiting.")
             return
         
+        # Generate voucher numbers for all transactions
+        print("Generating voucher numbers...")
+        voucher_numbers = generate_voucher_numbers(client, len(spenden_transactions))
+        print(f"✓ Generated {len(voucher_numbers)} voucher numbers (starting from: {voucher_numbers[0]})")
+        print()
+        
         # Build voucher plan
         voucher_plan = []
-        for txn in spenden_transactions:
+        for i, txn in enumerate(spenden_transactions):
             # Parse raw data to get payeePayerName
             raw_data = json.loads(txn.get('raw_data', '{}'))
             payee_payer_name = raw_data.get('payeePayerName', 'Unknown')
@@ -215,8 +249,8 @@ def main():
             # Find matching contact (donor) - IMPORTANT!
             contact = find_spenden_contact(db, payee_payer_name)
             
-            # Generate voucher number
-            voucher_number = generate_voucher_number(txn['id'])
+            # Get voucher number from pre-generated list
+            voucher_number = voucher_numbers[i]
             
             voucher_plan.append({
                 'transaction_id': txn['id'],
@@ -337,12 +371,6 @@ def main():
         print("=" * 80)
         print("CREATING VOUCHERS")
         print("=" * 80)
-        print()
-        
-        # Initialize API client
-        print(f"Connecting to SevDesk API at {api_url}...")
-        client = SevDeskClient(api_key=api_key, base_url=api_url)
-        print("✓ Connected")
         print()
         
         # Get check account ID from first transaction

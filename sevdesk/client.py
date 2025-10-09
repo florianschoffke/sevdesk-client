@@ -303,29 +303,65 @@ class SevDeskClient:
         response = self._request('POST', '/Voucher/Factory/saveVoucher', data=voucher_data)
         return response
     
-    def get_all_vouchers(self, limit: int = 1, sort_by_date: bool = True) -> List[Dict]:
+    def get_all_vouchers(self, limit: int = 1, sort_by_date: bool = True, fetch_all: bool = False) -> List[Dict]:
         """
         Fetch vouchers from SevDesk API.
         
         Args:
-            limit: Maximum number of vouchers to fetch (default: 1)
+            limit: Maximum number of vouchers per request (default: 1)
             sort_by_date: Sort by create date descending to get most recent (default: True)
+            fetch_all: If True, fetch all vouchers with pagination (default: False)
             
         Returns:
             List of voucher dictionaries
         """
-        params = {
-            'limit': limit,
-        }
+        if not fetch_all:
+            # Original behavior: single request with limit
+            params = {
+                'limit': limit,
+            }
+            
+            if sort_by_date:
+                params['order[create]'] = 'DESC'
+            
+            response = self._request('GET', '/Voucher', params=params)
+            
+            if response and 'objects' in response:
+                return response['objects']
+            return []
         
-        if sort_by_date:
-            params['order[create]'] = 'DESC'
+        # New behavior: fetch all vouchers with pagination
+        all_vouchers = []
+        offset = 0
+        page_size = 100  # Use reasonable page size
         
-        response = self._request('GET', '/Voucher', params=params)
+        while True:
+            params = {
+                'limit': page_size,
+                'offset': offset,
+            }
+            
+            if sort_by_date:
+                params['order[create]'] = 'DESC'
+            
+            response = self._request('GET', '/Voucher', params=params)
+            
+            if not response or 'objects' not in response:
+                break
+            
+            vouchers = response['objects']
+            if not vouchers:
+                break
+            
+            all_vouchers.extend(vouchers)
+            
+            # If we got fewer vouchers than the page size, we've reached the end
+            if len(vouchers) < page_size:
+                break
+            
+            offset += page_size
         
-        if response and 'objects' in response:
-            return response['objects']
-        return []
+        return all_vouchers
     
     def test_connection(self) -> bool:
         """

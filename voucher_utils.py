@@ -26,8 +26,9 @@ def get_next_voucher_number(client) -> int:
     current_year = datetime.now().year
     
     try:
-        # Fetch recent vouchers and search for B-YYYY-NR pattern
-        vouchers = client.get_all_vouchers(limit=100, sort_by_date=True)
+        # Fetch ALL vouchers from current year to find the highest B-YYYY-NR number
+        vouchers = client.get_all_vouchers(fetch_all=True, sort_by_date=True)
+        print(f"  → Fetched {len(vouchers)} total vouchers from API")
         
         highest_nr = 0
         for voucher in vouchers:

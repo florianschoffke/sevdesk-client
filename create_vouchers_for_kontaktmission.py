@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Create vouchers for ÜLP (Übungsleiterpauschale) transactions.
+Create vouchers for KONTAKTMISSION DEUTSCHLAND donation expenses.
 
-This script finds open transactions containing "ÜLP" or "Übungsleiterpauschale"
-in the payment purpose and creates vouchers for them.
+This script finds open transactions to KONTAKTMISSION DEUTSCHLAND
+and creates vouchers for them.
 """
 import os
 import sys
+import json
 from datetime import datetime
 from dotenv import load_dotenv
 from sevdesk.client import SevDeskClient
@@ -23,54 +24,47 @@ from voucher_utils import (
 )
 
 
-# Custom mappings for ÜLP script
+# Cost centre mappings based on purpose
 COST_CENTRE_MAPPINGS = {
-    'tobias zimmermann': 'tobias zimmermann (ülp)',  # Special rule for ÜLP
+    'hodzi': 'Hodzi',
+    'jean richards': 'Samuel Jeanrichard (intern)',
+    'jeanrichard': 'Samuel Jeanrichard (intern)',
 }
 
-CONTACT_MAPPINGS = {
-    # Add any custom contact mappings here if needed
-}
+# Contact name for KONTAKTMISSION
+KONTAKTMISSION_CONTACT = 'KONTAKTMISSION DEUTSCHLAND'
 
 
-def find_ulp_cost_centre(db: TransactionDB, payee_name: str, is_ulp_transaction: bool = False) -> dict:
+def determine_cost_centre(db: TransactionDB, payment_purpose: str) -> dict:
     """
-    Find cost centre for ÜLP transactions with special rules.
+    Determine cost centre based on payment purpose.
     
     Args:
         db: Database connection
-        payee_name: Name to search for
-        is_ulp_transaction: Whether this is a ÜLP transaction
+        payment_purpose: Payment purpose text
         
     Returns:
         Cost centre dict or None
     """
-    # Special rule: For Tobias Zimmermann + ÜLP transaction, use "Tobias Zimmermann (ÜLP)"
-    mappings = COST_CENTRE_MAPPINGS if is_ulp_transaction else {}
-    return find_cost_centre_by_name(db, payee_name, custom_mappings=mappings)
-
-
-def find_ulp_contact(db: TransactionDB, payee_name: str) -> dict:
-    """
-    Find contact for ÜLP transactions (prefer Suppliers for expenses).
+    purpose_upper = payment_purpose.upper()
     
-    Args:
-        db: Database connection
-        payee_name: Name to search for
-        
-    Returns:
-        Contact dict or None
-    """
-    return find_contact_by_name(db, payee_name, prefer_category=3, custom_mappings=CONTACT_MAPPINGS)
+    # Check for Hodzi
+    if 'HODZI' in purpose_upper:
+        return find_cost_centre_by_name(db, 'Hodzi', custom_mappings=COST_CENTRE_MAPPINGS)
+    
+    # Check for Jean Richards
+    if 'JEAN' in purpose_upper or 'RICHARDS' in purpose_upper:
+        return find_cost_centre_by_name(db, 'Jean Richards', custom_mappings=COST_CENTRE_MAPPINGS)
+    
+    return None
 
 
 def main():
     """Main function."""
-    import json
     import argparse
     
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Create vouchers for ÜLP transactions')
+    parser = argparse.ArgumentParser(description='Create vouchers for KONTAKTMISSION donations')
     parser.add_argument('--create-single', action='store_true', 
                        help='Create voucher for the first transaction only (test mode)')
     parser.add_argument('--create-all', action='store_true',
@@ -90,7 +84,7 @@ def main():
         sys.exit(1)
     
     print("=" * 80)
-    print("ÜLP Voucher Creator")
+    print("KONTAKTMISSION Voucher Creator")
     print("=" * 80)
     print()
     
@@ -113,16 +107,16 @@ def main():
     # Initialize database
     print(f"Opening database: {db_path}")
     with TransactionDB(db_path=db_path) as db:
-        # Get accounting type for Ehrenamtspauschale
+        # Get accounting type for donations
         accounting_type = None
         all_accounting_types = db.get_all_accounting_types()
         for at in all_accounting_types:
-            if 'Ehrenamtspauschale' in at.get('name', '') or 'Übungsleiterpauschale' in at.get('name', ''):
+            if 'Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke' in at.get('name', ''):
                 accounting_type = at
                 break
         
         if not accounting_type:
-            print("Error: Could not find 'Ehrenamtspauschale/Übungsleiterpauschale' accounting type!")
+            print("Error: Could not find 'Zuwendungen, Spenden...' accounting type!")
             sys.exit(1)
         
         print(f"✓ Found accounting type: {accounting_type['name']} (ID: {accounting_type['id']})")
@@ -134,46 +128,44 @@ def main():
         print(f"✓ Found {len(all_transactions)} open transactions")
         print()
         
-        # Filter transactions with ÜLP or Übungsleiterpauschale
-        ulp_transactions = []
+        # Filter transactions for KONTAKTMISSION
+        kontakt_transactions = []
         for txn in all_transactions:
-            payment_purpose = txn.get('paymt_purpose', '') or ''
-            payment_purpose_lower = payment_purpose.lower()
-            if ('ülp' in payment_purpose_lower or 
-                'übungsleiterpauschale' in payment_purpose_lower or
-                'ehrenamtspauschale' in payment_purpose_lower):
-                ulp_transactions.append(txn)
+            raw_data = json.loads(txn.get('raw_data', '{}'))
+            payee = raw_data.get('payeePayerName', '') or ''
+            purpose = txn.get('paymt_purpose', '') or ''
+            
+            # Only include expense transactions (negative amounts)
+            if txn.get('amount', 0) < 0:
+                if 'KONTAKTMISSION' in payee.upper() or 'KONTAKTMISSION' in purpose.upper():
+                    kontakt_transactions.append(txn)
         
-        print(f"✓ Found {len(ulp_transactions)} transactions matching 'ÜLP', 'Übungsleiterpauschale' or 'Ehrenamtspauschale'")
+        print(f"✓ Found {len(kontakt_transactions)} KONTAKTMISSION donation transactions")
         print()
         
-        if not ulp_transactions:
+        if not kontakt_transactions:
             print("No matching transactions found. Exiting.")
             return
         
         # Generate voucher numbers for all transactions
         print("Generating voucher numbers...")
-        voucher_numbers = generate_voucher_numbers(client, len(ulp_transactions))
-        print(f"✓ Generated {len(voucher_numbers)} voucher numbers (next available: {voucher_numbers[0]})")
+        voucher_numbers = generate_voucher_numbers(client, len(kontakt_transactions))
+        print(f"✓ Generated {len(voucher_numbers)} voucher numbers (starting from: {voucher_numbers[0]})")
         print()
         
         # Build voucher plan
         voucher_plan = []
-        for i, txn in enumerate(ulp_transactions):
+        for i, txn in enumerate(kontakt_transactions):
             # Parse raw data to get payeePayerName
-            import json
             raw_data = json.loads(txn.get('raw_data', '{}'))
             payee_payer_name = raw_data.get('payeePayerName', 'Unknown')
-            
-            # Check if this is a ÜLP transaction
             payment_purpose = txn.get('paymt_purpose', '') or ''
-            is_ulp = 'ÜLP' in payment_purpose
             
-            # Find matching cost centre (with special rule for Tobias + ÜLP)
-            cost_centre = find_ulp_cost_centre(db, payee_payer_name, is_ulp_transaction=is_ulp)
+            # Determine cost centre based on purpose
+            cost_centre = determine_cost_centre(db, payment_purpose)
             
-            # Find matching contact (supplier)
-            contact = find_ulp_contact(db, payee_payer_name)
+            # Find matching contact (use KONTAKTMISSION as payee)
+            contact = find_contact_by_name(db, KONTAKTMISSION_CONTACT, prefer_category=3)
             
             # Get voucher number from pre-generated list
             voucher_number = voucher_numbers[i]
@@ -182,7 +174,7 @@ def main():
                 'transaction_id': txn['id'],
                 'transaction_date': txn['value_date'],
                 'amount': txn['amount'],
-                'payment_purpose': txn['paymt_purpose'],
+                'payment_purpose': payment_purpose,
                 'payee_payer_name': payee_payer_name,
                 'cost_centre': cost_centre,
                 'contact': contact,
@@ -192,14 +184,14 @@ def main():
         
         # Build markdown content using shared utility
         markdown_lines = build_voucher_plan_markdown(
-            title="ÜLP Voucher Plan",
+            title="KONTAKTMISSION Voucher Plan",
             voucher_plan=voucher_plan,
             accounting_type=accounting_type,
             show_donation_type=False
         )
         
         # Write to file
-        output_file = "voucher_plan.md"
+        output_file = "voucher_plan_kontaktmission.md"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(markdown_lines))
         
@@ -211,13 +203,13 @@ def main():
         if not args.create_single and not args.create_all:
             # Display summary to console using shared utility
             print_console_summary(
-                title="ÜLP Voucher Creator",
+                title="KONTAKTMISSION Voucher Creator",
                 output_file=output_file,
                 voucher_count=len(voucher_plan),
                 accounting_type=accounting_type,
                 missing_cost_centres=len(missing_cost_centres),
                 missing_contacts=len(missing_contacts),
-                script_name="create_vouchers_for_ulp.py"
+                script_name="create_vouchers_for_kontaktmission.py"
             )
             
             if missing_cost_centres:
@@ -235,8 +227,8 @@ def main():
             print()
             print("Next steps:")
             print(f"  1. Open and review: {output_file}")
-            print("  2. Test with single voucher: python create_vouchers_for_ulp.py --create-single")
-            print("  3. Create all vouchers: python create_vouchers_for_ulp.py --create-all")
+            print("  2. Test with single voucher: python create_vouchers_for_kontaktmission.py --create-single")
+            print("  3. Create all vouchers: python create_vouchers_for_kontaktmission.py --create-all")
             print()
             print("=" * 80)
             return
@@ -279,8 +271,7 @@ def main():
         print()
         
         # Get check account ID from first transaction
-        import json
-        first_txn_raw = json.loads(ulp_transactions[0].get('raw_data', '{}'))
+        first_txn_raw = json.loads(kontakt_transactions[0].get('raw_data', '{}'))
         check_account_id = first_txn_raw.get('checkAccount', {}).get('id')
         sev_client_id = first_txn_raw.get('sevClient', {}).get('id')
         
@@ -397,4 +388,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
