@@ -1,57 +1,65 @@
 #!/usr/bin/env python3
 """
-Create vouchers for ÜLP (Übungsleiterpauschale) transactions.
+Create vouchers for Krankenkassen (Health Insurance) transactions.
 
-This script finds open transactions containing "ÜLP" or "Übungsleiterpauschale"
+This script finds open transactions containing "Beitraege" (contributions)
 in the payment purpose and creates vouchers for them.
+
+These are typically monthly health insurance contributions for:
+- Techniker Krankenkasse
+- Knappschaft-Bahn-See (Bundesknappschaft Ost)
+
+Cost Centre: "Lohnnebenkosten" (Payroll Costs)
+Accounting Type: Need to be determined based on your chart of accounts
 """
 import os
 import sys
+import json
+import argparse
 from datetime import datetime
 from dotenv import load_dotenv
 from sevdesk.client import SevDeskClient
 from database.db import TransactionDB
 from reload_data import reload_all_data
 from voucher_utils import (
+    generate_voucher_numbers,
     build_voucher_plan_markdown,
     print_console_summary,
     print_voucher_table,
-    find_cost_centre_by_name,
     find_contact_by_name,
     create_voucher_for_transaction
 )
 
 
-# Custom mappings for ÜLP script
-COST_CENTRE_MAPPINGS = {
-    'tobias zimmermann': 'tobias zimmermann (ülp)',  # Special rule for ÜLP
-}
-
+# Custom mappings for Krankenkassen script
+# Custom mappings for Krankenkassen script
 CONTACT_MAPPINGS = {
-    # Add any custom contact mappings here if needed
+    # Map "Knappschaft-Bahn-See" to "Bundesknappschaft Ost"
+    'knappschaft-bahn-see': 'Bundesknappschaft Ost',
+    'knappschaft': 'Bundesknappschaft Ost',
 }
 
 
-def find_ulp_cost_centre(db: TransactionDB, payee_name: str, is_ulp_transaction: bool = False) -> dict:
+def find_krankenkassen_cost_centre(db: TransactionDB) -> dict:
     """
-    Find cost centre for ÜLP transactions with special rules.
+    Find the "Lohnnebenkosten" cost centre for health insurance.
     
     Args:
         db: Database connection
-        payee_name: Name to search for
-        is_ulp_transaction: Whether this is a ÜLP transaction
         
     Returns:
         Cost centre dict or None
     """
-    # Special rule: For Tobias Zimmermann + ÜLP transaction, use "Tobias Zimmermann (ÜLP)"
-    mappings = COST_CENTRE_MAPPINGS if is_ulp_transaction else {}
-    return find_cost_centre_by_name(db, payee_name, custom_mappings=mappings)
+    all_cost_centres = db.get_all_cost_centres()
+    for cc in all_cost_centres:
+        if cc.get('name') == 'Lohnnebenkosten':
+            return cc
+    return None
 
 
-def find_ulp_contact(db: TransactionDB, payee_name: str) -> dict:
+def find_krankenkassen_contact(db: TransactionDB, payee_name: str) -> dict:
     """
-    Find contact for ÜLP transactions (prefer Suppliers for expenses).
+    Find contact for Krankenkassen (prefer Suppliers for expenses).
     
     Args:
         db: Database connection
@@ -65,15 +73,12 @@ def find_ulp_contact(db: TransactionDB, payee_name: str) -> dict:
 
 def main():
     """Main function."""
-    import json
-    import argparse
-    
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Create vouchers for ÜLP transactions')
+    parser = argparse.ArgumentParser(description='Create vouchers for Krankenkassen transactions')
     parser.add_argument('--create-single', action='store_true', 
-                       help='Create voucher for the first transaction only (test mode)')
+                       help='Create a single voucher (for testing)')
     parser.add_argument('--create-all', action='store_true',
-                       help='Create vouchers for all transactions')
+                       help='Create all vouchers')
     args = parser.parse_args()
     
     # Load environment variables
@@ -83,13 +88,12 @@ def main():
     api_url = os.getenv('SEVDESK_API_URL', 'https://my.sevdesk.de/api/v1')
     db_path = os.getenv('DB_PATH', 'transactions.db')
     
-    # Validate API key
     if not api_key:
         print("Error: SEVDESK_API_KEY not found in environment variables.")
         sys.exit(1)
     
     print("=" * 80)
-    print("ÜLP Voucher Creator")
+    print("Krankenkassen Voucher Creator")
     print("=" * 80)
     print()
     
@@ -106,19 +110,41 @@ def main():
     # Initialize database
     print(f"Opening database: {db_path}")
     with TransactionDB(db_path=db_path) as db:
-        # Get accounting type for Ehrenamtspauschale
+        # Initialize API client early (needed for voucher number generation)
+        print(f"Connecting to SevDesk API at {api_url}...")
+        client = SevDeskClient(api_key=api_key, base_url=api_url)
+        print("✓ Connected")
+        print()
+        
+        # Get accounting type for health insurance contributions
+        # Using "Krankenkasse" (ID: 57)
         accounting_type = None
         all_accounting_types = db.get_all_accounting_types()
+        
+        print("Finding accounting type for health insurance...")
         for at in all_accounting_types:
-            if 'Ehrenamtspauschale' in at.get('name', '') or 'Übungsleiterpauschale' in at.get('name', ''):
+            if at.get('id') == 57 or at.get('name') == 'Krankenkasse':
                 accounting_type = at
                 break
         
         if not accounting_type:
-            print("Error: Could not find 'Ehrenamtspauschale/Übungsleiterpauschale' accounting type!")
+            print("Error: Could not find accounting type 'Krankenkasse' (ID: 57)")
+            print("\nAvailable accounting types:")
+            for at in all_accounting_types:
+                if 'kranken' in at.get('name', '').lower():
+                    print(f"  - {at.get('name')} (ID: {at.get('id')})")
             sys.exit(1)
         
-        print(f"✓ Found accounting type: {accounting_type['name']} (ID: {accounting_type['id']})")
+        print(f"✓ Using accounting type: {accounting_type['name']} (ID: {accounting_type['id']})")
+        print()
+        
+        # Get cost centre
+        cost_centre = find_krankenkassen_cost_centre(db)
+        if not cost_centre:
+            print("Error: Could not find 'Lohnnebenkosten' cost centre!")
+            sys.exit(1)
+        
+        print(f"✓ Found cost centre: {cost_centre['name']} (ID: {cost_centre['id']})")
         print()
         
         # Get all open transactions
@@ -127,43 +153,45 @@ def main():
         print(f"✓ Found {len(all_transactions)} open transactions")
         print()
         
-        # Filter transactions with ÜLP or Übungsleiterpauschale
-        ulp_transactions = []
+        # Filter transactions from health insurance providers
+        # (Techniker Krankenkasse and Knappschaft-Bahn-See)
+        krankenkassen_transactions = []
         for txn in all_transactions:
-            payment_purpose = txn.get('paymt_purpose', '') or ''
-            payment_purpose_lower = payment_purpose.lower()
-            if ('ülp' in payment_purpose_lower or 
-                'übungsleiterpauschale' in payment_purpose_lower or
-                'ehrenamtspauschale' in payment_purpose_lower):
-                ulp_transactions.append(txn)
+            # Parse raw data to get payeePayerName
+            raw_data = json.loads(txn.get('raw_data', '{}'))
+            payee_name = raw_data.get('payeePayerName', '') or ''
+            
+            # Match if payee is a known health insurance provider
+            if ('Techniker Krankenkasse' in payee_name or 
+                'Knappschaft-Bahn-See' in payee_name or
+                'Knappschaft' in payee_name):
+                krankenkassen_transactions.append(txn)
         
-        print(f"✓ Found {len(ulp_transactions)} transactions matching 'ÜLP', 'Übungsleiterpauschale' or 'Ehrenamtspauschale'")
+        print(f"✓ Found {len(krankenkassen_transactions)} transactions from Krankenkassen (Techniker/Knappschaft)")
         print()
         
-        if not ulp_transactions:
+        if not krankenkassen_transactions:
             print("No matching transactions found. Exiting.")
             return
         
+        # Generate consecutive voucher numbers for all transactions
+        print("Generating voucher numbers...")
+        voucher_numbers = generate_voucher_numbers(client, len(krankenkassen_transactions))
+        print(f"✓ Generated voucher numbers: {voucher_numbers[0]} to {voucher_numbers[-1]}")
+        print()
+        
         # Build voucher plan
         voucher_plan = []
-        for txn in ulp_transactions:
+        for i, txn in enumerate(krankenkassen_transactions):
             # Parse raw data to get payeePayerName
-            import json
             raw_data = json.loads(txn.get('raw_data', '{}'))
             payee_payer_name = raw_data.get('payeePayerName', 'Unknown')
             
-            # Check if this is a ÜLP transaction
-            payment_purpose = txn.get('paymt_purpose', '') or ''
-            is_ulp = 'ÜLP' in payment_purpose
+            # Find matching contact (health insurance company)
+            contact = find_krankenkassen_contact(db, payee_payer_name)
             
-            # Find matching cost centre (with special rule for Tobias + ÜLP)
-            cost_centre = find_ulp_cost_centre(db, payee_payer_name, is_ulp_transaction=is_ulp)
-            
-            # Find matching contact (supplier)
-            contact = find_ulp_contact(db, payee_payer_name)
-            
-            # Generate voucher number (simple format for now, TODO: switch to B-YYYY-NR format)
-            voucher_number = f"BEL-{datetime.now().year}-{datetime.now().month:02d}-{datetime.now().day:02d}-{txn['id']}"
+            # Use pre-generated voucher number (B-2025-X format)
+            voucher_number = voucher_numbers[i]
             
             voucher_plan.append({
                 'transaction_id': txn['id'],
@@ -179,51 +207,48 @@ def main():
         
         # Build markdown content using shared utility
         markdown_lines = build_voucher_plan_markdown(
-            title="ÜLP Voucher Plan",
+            title="Krankenkassen Voucher Plan",
             voucher_plan=voucher_plan,
             accounting_type=accounting_type,
             show_donation_type=False
         )
         
         # Write to file
-        output_file = "voucher_plan.md"
+        output_file = "voucher_plan_krankenkassen.md"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(markdown_lines))
         
         # Get counts for summary
-        missing_cost_centres = [p for p in voucher_plan if not p['cost_centre']]
         missing_contacts = [p for p in voucher_plan if not p['contact']]
         
         # If no create flag, just show the plan
         if not args.create_single and not args.create_all:
             # Display summary to console using shared utility
             print_console_summary(
-                title="ÜLP Voucher Creator",
+                title="Krankenkassen Voucher Creator",
                 output_file=output_file,
                 voucher_count=len(voucher_plan),
                 accounting_type=accounting_type,
-                missing_cost_centres=len(missing_cost_centres),
+                missing_cost_centres=0,  # All use same cost centre
                 missing_contacts=len(missing_contacts),
-                script_name="create_vouchers_for_ulp.py"
+                script_name="create_vouchers_for_krankenkassen.py"
             )
-            
-            if missing_cost_centres:
-                print(f"⚠️  WARNING: {len(missing_cost_centres)} transaction(s) have no matching cost centre")
-                print("   See the markdown file for details.")
-                print()
             
             if missing_contacts:
                 print(f"⚠️  WARNING: {len(missing_contacts)} transaction(s) have no matching contact")
                 print("   See the markdown file for details.")
                 print()
             
+            print("Cost Centre for all vouchers:")
+            print(f"  → {cost_centre['name']} (ID: {cost_centre['id']})")
+            print()
             print("Accounting Type for all positions:")
             print(f"  → {accounting_type['name']} (ID: {accounting_type['id']})")
             print()
             print("Next steps:")
             print(f"  1. Open and review: {output_file}")
-            print("  2. Test with single voucher: python create_vouchers_for_ulp.py --create-single")
-            print("  3. Create all vouchers: python create_vouchers_for_ulp.py --create-all")
+            print("  2. Test with single voucher: python create_vouchers_for_krankenkassen.py --create-single")
+            print("  3. Create all vouchers: python create_vouchers_for_krankenkassen.py --create-all")
             print()
             print("=" * 80)
             return
@@ -265,15 +290,12 @@ def main():
         print("=" * 80)
         print()
         
-        # Initialize API client
-        print(f"Connecting to SevDesk API at {api_url}...")
-        client = SevDeskClient(api_key=api_key, base_url=api_url)
-        print("✓ Connected")
+        # Client already initialized earlier
+        print(f"Using SevDesk API at {api_url}...")
         print()
         
         # Get check account ID from first transaction
-        import json
-        first_txn_raw = json.loads(ulp_transactions[0].get('raw_data', '{}'))
+        first_txn_raw = json.loads(krankenkassen_transactions[0].get('raw_data', '{}'))
         check_account_id = first_txn_raw.get('checkAccount', {}).get('id')
         sev_client_id = first_txn_raw.get('sevClient', {}).get('id')
         
@@ -290,7 +312,8 @@ def main():
             print(f"[{i}/{len(vouchers_to_create)}] Creating voucher for transaction {plan['transaction_id']}...")
             print(f"    Amount: €{plan['amount']:,.2f}")
             print(f"    Payee: {plan['payee_payer_name']}")
-            print(f"    Cost Centre: {plan['cost_centre']['name'] if plan['cost_centre'] else 'None'}")
+            print(f"    Cost Centre: {plan['cost_centre']['name']}")
+            print(f"    Contact: {plan['contact']['name'] if plan['contact'] else 'None'}")
             
             try:
                 response = create_voucher_for_transaction(
@@ -310,7 +333,8 @@ def main():
                             transaction_id=plan['transaction_id'],
                             check_account_id=check_account_id,
                             amount=plan['amount'],
-                            date=plan['transaction_date'][:10]  # Use transaction date
+                            date=plan['transaction_date'][:10],
+                            is_income=False
                         )
                         print(f"    ✓ Voucher booked and linked to transaction!")
                     except Exception as link_error:
@@ -361,7 +385,7 @@ def main():
                     if txn:
                         old_status = 100  # Was open
                         new_status = txn.get('status')
-                        status_name = {100: 'Open', 200: 'Linked', 300: 'Booked'}.get(new_status, f'Unknown ({new_status})')
+                        status_name = {100: 'Open', 200: 'Linked', 1000: 'Booked'}.get(new_status, f'Unknown ({new_status})')
                         
                         if new_status != old_status:
                             print(f"✓ Transaction {txn_id}: {old_status} → {new_status} ({status_name})")
@@ -390,4 +414,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

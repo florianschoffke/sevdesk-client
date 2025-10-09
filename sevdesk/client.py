@@ -303,6 +303,30 @@ class SevDeskClient:
         response = self._request('POST', '/Voucher/Factory/saveVoucher', data=voucher_data)
         return response
     
+    def get_all_vouchers(self, limit: int = 1, sort_by_date: bool = True) -> List[Dict]:
+        """
+        Fetch vouchers from SevDesk API.
+        
+        Args:
+            limit: Maximum number of vouchers to fetch (default: 1)
+            sort_by_date: Sort by create date descending to get most recent (default: True)
+            
+        Returns:
+            List of voucher dictionaries
+        """
+        params = {
+            'limit': limit,
+        }
+        
+        if sort_by_date:
+            params['order[create]'] = 'DESC'
+        
+        response = self._request('GET', '/Voucher', params=params)
+        
+        if response and 'objects' in response:
+            return response['objects']
+        return []
+    
     def test_connection(self) -> bool:
         """
         Test the API connection.
