@@ -1,136 +1,269 @@
-# SevDesk Transaction Manager# SevDesk Transaction Manager
+# SevDesk Transaction Manager# SevDesk Transaction Manager# SevDesk Transaction Manager
 
 
 
-A Python-based tool to manage SevDesk transactions and automate voucher creation using SQLite database.A Python-based tool to manage SevDesk transactions and automate voucher creation using SQLite database.
+A Python-based tool to manage SevDesk transactions and automate voucher creation using SQLite database.
 
 
 
-## Features## Features
+## FeaturesA Python-based tool to manage SevDesk transactions and automate voucher creation using SQLite database.A Python-based tool to manage SevDesk transactions and automate voucher creation using SQLite database.
 
 
 
-### Transaction Management### Transaction Management
+### Transaction Management
 
-- Fetch open transactions from SevDesk API- Fetch open transactions from SevDesk API
+- Fetch open transactions from SevDesk API
 
-- Store transactions in SQLite database- Store transactions in SQLite database
+- Store transactions in SQLite database## Features## Features
 
-- Search and filter transactions- Search and filter transactions
-
-- Bulk edit transactions- Bulk edit transactions
+- Search and filter transactions
 
 
 
-### Voucher Creation### Voucher Creation (NEW!)
+### Voucher Creation
 
-- **Automated voucher creation** for different transaction types- **Automated voucher creation** for different transaction types
+- **Automated voucher creation** for different transaction types### Transaction Management### Transaction Management
 
-- **Master orchestrator** to run all voucher types at once- **Master orchestrator** to run all voucher types at once
+- **Master orchestrator** to run all voucher types at once
 
-- **6 specialized voucher creators**:- **6 specialized voucher creators**:
+- **6 specialized voucher creators**:- Fetch open transactions from SevDesk API- Fetch open transactions from SevDesk API
 
-  - 💰 Gehalt (Salaries)  - 💰 Gehalt (Salaries)
+  - 💰 Gehalt (Salaries)
 
-  - 🎓 ÜLP (Übungsleiterpauschale)  - 🎓 ÜLP (Übungsleiterpauschale)
+  - 🎓 ÜLP (Übungsleiterpauschale)- Store transactions in SQLite database- Store transactions in SQLite database
+
+  - 💝 Spenden (Donations)
+
+  - 🏥 Krankenkassen (Health Insurance)- Search and filter transactions- Search and filter transactions
+
+  - ⛪ Grace Baptist Donations
+
+  - 🌍 Kontaktmission Donations- Bulk edit transactions- Bulk edit transactions
+
+- **Unified markdown reports** with summary tables
+
+- **Batch processing** for time savings (75% faster)
+
+
+
+## Quick Start### Voucher Creation### Voucher Creation (NEW!)
+
+
+
+```bash- **Automated voucher creation** for different transaction types- **Automated voucher creation** for different transaction types
+
+# 1. Install dependencies
+
+pip install -r requirements.txt- **Master orchestrator** to run all voucher types at once- **Master orchestrator** to run all voucher types at once
+
+
+
+# 2. Configure API credentials- **6 specialized voucher creators**:- **6 specialized voucher creators**:
+
+cp .env.example .env
+
+# Edit .env and add your SevDesk API key  - 💰 Gehalt (Salaries)  - 💰 Gehalt (Salaries)
+
+
+
+# 3. Load data  - 🎓 ÜLP (Übungsleiterpauschale)  - 🎓 ÜLP (Übungsleiterpauschale)
+
+python3 scripts/loaders/reload_data.py
 
   - 💝 Spenden (Donations)  - 💝 Spenden (Donations)
 
-  - 🏥 Krankenkassen (Health Insurance)  - 🏥 Krankenkassen (Health Insurance)
+# 4. Create vouchers
+
+python3 create_all_vouchers.py  - 🏥 Krankenkassen (Health Insurance)  - 🏥 Krankenkassen (Health Insurance)
+
+```
 
   - ⛪ Grace Baptist Donations  - ⛪ Grace Baptist Donations
 
+## Usage
+
   - 🌍 Kontaktmission Donations  - 🌍 Kontaktmission Donations
+
+### Master Voucher Script (Recommended!)
 
 - **Unified markdown reports** with summary tables- **Unified markdown reports** with summary tables
 
+**Run from project root - super convenient!**
+
 - **Batch processing** for time savings- **Batch processing** for time savings
 
+```bash
 
+# Generate plan
+
+python3 create_all_vouchers.py
 
 ## Setup## Setup
 
+# Test mode
 
-
-1. Install dependencies:1. Install dependencies:
-
-```bash```bash
-
-pip install -r requirements.txtpip install -r requirements.txt
-
-``````
+python3 create_all_vouchers.py --create-single
 
 
 
-2. Create `.env` file with your SevDesk API credentials:2. Create `.env` file with your SevDesk API credentials:
+# Create all1. Install dependencies:1. Install dependencies:
 
-```bash```bash
+python3 create_all_vouchers.py --create-all
 
-cp .env.example .envcp .env.example .env
-
-# Edit .env and add your API key# Edit .env and add your API key
-
-``````
+``````bash```bash
 
 
+
+### Individual Voucher Scriptspip install -r requirements.txtpip install -r requirements.txt
+
+
+
+```bash``````
+
+python3 scripts/vouchers/create_vouchers_for_spenden.py
+
+python3 scripts/vouchers/create_vouchers_for_gehalt.py
+
+# etc.
+
+```2. Create `.env` file with your SevDesk API credentials:2. Create `.env` file with your SevDesk API credentials:
+
+
+
+### Load Data```bash```bash
+
+
+
+```bashcp .env.example .envcp .env.example .env
+
+# Reload everything
+
+python3 scripts/loaders/reload_data.py# Edit .env and add your API key# Edit .env and add your API key
+
+
+
+# Or load specific data``````
+
+python3 scripts/loaders/load_transactions.py
+
+python3 scripts/loaders/load_contacts.py
+
+```
 
 3. Reload data from SevDesk:3. Run the transaction loader:
 
+## Project Structure
+
 ```bash```bash
 
-python3 scripts/loaders/reload_data.pypython load_transactions.py
+```
 
-``````
+.python3 scripts/loaders/reload_data.pypython load_transactions.py
+
+├── create_all_vouchers.py        # 👈 Convenience wrapper - run from here!
+
+├── src/                          # Library code``````
+
+│   ├── sevdesk/                  # API client
+
+│   ├── database/                 # Database operations
+
+│   └── vouchers/                 # Framework
+
+├── scripts/                      ## Project Structure## Project Structure
+
+│   ├── loaders/                  # Data loading
+
+│   └── vouchers/                 # Voucher creators
+
+├── docs/                         # Documentation
+
+├── reports/                      # Generated plans``````
+
+└── transactions.db               # Database
+
+```..
 
 
 
-## Project Structure## Project Structure
+## Documentation├── src/                          # Core library code├── sevdesk/                      # SevDesk API client module
 
 
 
-``````
+- **[AUTOMATION_OPPORTUNITIES.md](docs/AUTOMATION_OPPORTUNITIES.md)** - Analysis: 183 transactions could be automated!│   ├── sevdesk/                  # SevDesk API client│   ├── __init__.py
 
-..
+- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)** - How we reduced code by 38%
 
-├── src/                          # Core library code├── sevdesk/                      # SevDesk API client module
+- **[RESTRUCTURING.md](docs/RESTRUCTURING.md)** - Project reorganization details│   │   ├── __init__.py│   └── client.py
 
-│   ├── sevdesk/                  # SevDesk API client│   ├── __init__.py
 
-│   │   ├── __init__.py│   └── client.py
 
-│   │   └── client.py├── database/                     # Database operations
+## Performance│   │   └── client.py├── database/                     # Database operations
 
-│   ├── database/                 # Database operations│   ├── __init__.py
 
-│   │   ├── __init__.py│   └── db.py
 
-│   │   └── db.py├── voucher_creator_base.py       # Base class for voucher creators (NEW!)
+- **Time savings:** 75% (3min → 45sec for all voucher types)│   ├── database/                 # Database operations│   ├── __init__.py
 
-│   └── vouchers/                 # Voucher creation framework├── create_all_vouchers.py        # Master orchestrator for all vouchers (NEW!)
+- **Code reduction:** 38% (2452 → 910 lines)
 
-│       ├── __init__.py├── create_vouchers_for_*.py      # Individual voucher creators (NEW!)
+- **Automation rate:** 13% currently, 45-50% possible│   │   ├── __init__.py│   └── db.py
 
-│       ├── voucher_creator_base.py   # Base class (Template Method Pattern)├── voucher_utils.py              # Shared voucher utilities (NEW!)
 
-│       └── voucher_utils.py          # Shared utilities├── load_transactions.py          # Load transactions from API
 
-├── scripts/                      # Executable scripts├── reload_data.py                # Reload all data from API
+## Automation Opportunities│   │   └── db.py├── voucher_creator_base.py       # Base class for voucher creators (NEW!)
 
-│   ├── loaders/                  # Data loading scripts├── requirements.txt              # Python dependencies
 
-│   │   ├── load_transactions.py├── .env.example                  # Example environment variables
 
-│   │   ├── load_contacts.py├── REFACTORING_SUMMARY.md        # Refactoring documentation (NEW!)
+**Current Status:** 27/210 transactions automated (12.9%)│   └── vouchers/                 # Voucher creation framework├── create_all_vouchers.py        # Master orchestrator for all vouchers (NEW!)
+
+
+
+**High-Priority Opportunities:**│       ├── __init__.py├── create_vouchers_for_*.py      # Individual voucher creators (NEW!)
+
+1. **Auslage** (Expense Reimbursements) - 33 transactions
+
+2. **JEK Freizeit** (Youth Events) - 18 transactions  │       ├── voucher_creator_base.py   # Base class (Template Method Pattern)├── voucher_utils.py              # Shared voucher utilities (NEW!)
+
+3. **QM Support** (Recurring Service) - 10 transactions
+
+4. **Miete** (Rent) - 3 transactions worth €30,000!│       └── voucher_utils.py          # Shared utilities├── load_transactions.py          # Load transactions from API
+
+
+
+See [AUTOMATION_OPPORTUNITIES.md](docs/AUTOMATION_OPPORTUNITIES.md) for full analysis.├── scripts/                      # Executable scripts├── reload_data.py                # Reload all data from API
+
+
+
+## Architecture│   ├── loaders/                  # Data loading scripts├── requirements.txt              # Python dependencies
+
+
+
+Built with **Template Method Pattern** for code reuse:│   │   ├── load_transactions.py├── .env.example                  # Example environment variables
+
+- Base class handles all common logic (600+ lines)
+
+- Subclasses implement only specific filtering/mapping│   │   ├── load_contacts.py├── REFACTORING_SUMMARY.md        # Refactoring documentation (NEW!)
+
+- Result: Consistent, maintainable, extensible
 
 │   │   ├── load_categories.py├── MASTER_VOUCHER_CREATOR_DOCS.md # Master script docs (NEW!)
 
+## Contributing
+
 │   │   ├── load_cost_centres.py└── README.md                     # This file
 
-│   │   ├── load_accounting_types.py```
+To add a new voucher type, create a subclass of `VoucherCreatorBase` and implement:
 
-│   │   └── reload_data.py        # Reload all data
+- `get_script_name()` - Display name│   │   ├── load_accounting_types.py```
 
-│   └── vouchers/                 # Voucher creation scripts## Usage
+- `filter_transactions()` - Which transactions to process
+
+- `build_voucher_plan_item()` - How to build the voucher│   │   └── reload_data.py        # Reload all data
+
+
+
+See [MASTER_VOUCHER_CREATOR_DOCS.md](docs/MASTER_VOUCHER_CREATOR_DOCS.md) for details.│   └── vouchers/                 # Voucher creation scripts## Usage
+
 
 │       ├── create_all_vouchers.py    # Master orchestrator
 
