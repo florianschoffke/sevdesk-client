@@ -30,6 +30,8 @@ from scripts.vouchers.create_vouchers_for_krankenkassen import KrankenkassenVouc
 from scripts.vouchers.create_vouchers_for_grace_baptist import GraceBaptistVoucherCreator
 from scripts.vouchers.create_vouchers_for_kontaktmission import KontaktmissionVoucherCreator
 from scripts.vouchers.create_vouchers_for_ebtc import EBTCVoucherCreator
+from scripts.vouchers.create_vouchers_for_jek_freizeit import JEKFreizeitVoucherCreator
+from scripts.vouchers.create_vouchers_for_bankeinzug import BankeinzugVoucherCreator
 
 
 class MasterVoucherCreator:
@@ -49,6 +51,8 @@ class MasterVoucherCreator:
         ('grace_baptist', GraceBaptistVoucherCreator, '⛪', 'Grace Baptist'),
         ('kontaktmission', KontaktmissionVoucherCreator, '🌍', 'Kontaktmission'),
         ('ebtc', EBTCVoucherCreator, '📚', 'EBTC (Donations)'),
+        ('jek_freizeit', JEKFreizeitVoucherCreator, '🏕️', 'JEK Freizeit'),
+        ('bankeinzug', BankeinzugVoucherCreator, '🏦', 'Bankeinzug'),
     ]
     
     def __init__(self, create_mode: str = None):
