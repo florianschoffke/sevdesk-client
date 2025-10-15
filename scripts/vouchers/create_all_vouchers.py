@@ -29,6 +29,7 @@ from scripts.vouchers.create_vouchers_for_spenden import SpendenVoucherCreator
 from scripts.vouchers.create_vouchers_for_krankenkassen import KrankenkassenVoucherCreator
 from scripts.vouchers.create_vouchers_for_grace_baptist import GraceBaptistVoucherCreator
 from scripts.vouchers.create_vouchers_for_kontaktmission import KontaktmissionVoucherCreator
+from scripts.vouchers.create_vouchers_for_ebtc import EBTCVoucherCreator
 
 
 class MasterVoucherCreator:
@@ -47,6 +48,7 @@ class MasterVoucherCreator:
         ('krankenkassen', KrankenkassenVoucherCreator, '🏥', 'Krankenkassen (Health Insurance)'),
         ('grace_baptist', GraceBaptistVoucherCreator, '⛪', 'Grace Baptist'),
         ('kontaktmission', KontaktmissionVoucherCreator, '🌍', 'Kontaktmission'),
+        ('ebtc', EBTCVoucherCreator, '📚', 'EBTC (Donations)'),
     ]
     
     def __init__(self, create_mode: str = None):
