@@ -9,6 +9,7 @@ Usage:
     python3 create_all_vouchers.py                 # Generate unified plan
     python3 create_all_vouchers.py --create-single # Create one voucher per type
     python3 create_all_vouchers.py --create-all    # Create ALL vouchers
+    python3 create_all_vouchers.py --run-all       # Create ALL vouchers AND mark Bar-Kollekten as paid
 """
 import os
 import sys
@@ -70,6 +71,7 @@ class MasterVoucherCreator:
         self.create_mode = create_mode
         self.results: List[Dict] = []
         self.bar_kollekten_vouchers: List[Dict] = []
+        self.bar_kollekten_count = 0
         self.total_vouchers = 0
         self.total_created = 0
         self.total_failed = 0
@@ -217,15 +219,19 @@ class MasterVoucherCreator:
             
             if vouchers:
                 print(f"✓ Found {len(vouchers)} Bar-Kollekten vouchers to mark as paid")
+                # Store count for later reminder
+                self.bar_kollekten_count = len(vouchers)
                 # Generate the markdown table
                 markdown_table = marker.build_markdown_table(vouchers)
                 return markdown_table, len(vouchers)
             else:
                 print("✓ No Bar-Kollekten vouchers to mark as paid")
+                self.bar_kollekten_count = 0
                 return None, 0
                 
         except Exception as e:
             print(f"❌ Error checking Bar-Kollekten vouchers: {e}")
+            self.bar_kollekten_count = 0
             return None, 0
     
     def generate_unified_markdown(self) -> str:
@@ -378,7 +384,13 @@ class MasterVoucherCreator:
         # Next steps
         markdown_lines.append("## 🚀 Next Steps")
         markdown_lines.append("")
-        markdown_lines.append("### Option 1: Create All Vouchers at Once")
+        markdown_lines.append("### Option 1: Run Everything at Once")
+        markdown_lines.append("```bash")
+        markdown_lines.append("# Create ALL vouchers for ALL types AND mark Bar-Kollekten as paid")
+        markdown_lines.append("python3 scripts/vouchers/create_all_vouchers.py --run-all")
+        markdown_lines.append("```")
+        markdown_lines.append("")
+        markdown_lines.append("### Option 2: Create Vouchers Only")
         markdown_lines.append("```bash")
         markdown_lines.append("# Test with one voucher per type")
         markdown_lines.append("python3 scripts/vouchers/create_all_vouchers.py --create-single")
@@ -387,7 +399,7 @@ class MasterVoucherCreator:
         markdown_lines.append("python3 scripts/vouchers/create_all_vouchers.py --create-all")
         markdown_lines.append("```")
         markdown_lines.append("")
-        markdown_lines.append("### Option 2: Create by Individual Type")
+        markdown_lines.append("### Option 3: Create by Individual Type")
         markdown_lines.append("```bash")
         
         for result in self.results:
@@ -452,6 +464,9 @@ class MasterVoucherCreator:
         print(f"  1. Review the unified plan: {output_file}")
         print("  2. Test with one voucher per type: python3 create_all_vouchers.py --create-single")
         print("  3. Create all vouchers: python3 create_all_vouchers.py --create-all")
+        if self.bar_kollekten_count > 0:
+            print(f"  4. OR run everything at once: python3 create_all_vouchers.py --run-all")
+            print(f"     (creates vouchers + marks {self.bar_kollekten_count} Bar-Kollekten as paid)")
         print()
         print("=" * 80)
     
@@ -558,15 +573,95 @@ class MasterVoucherCreator:
         if self.total_failed > 0:
             print(f"❌ Failed: {self.total_failed} voucher(s)")
         print()
+        
+        # Bar-Kollekten reminder (only show if not in run_all mode)
+        if self.bar_kollekten_count > 0:
+            print("=" * 80)
+            print("⚠️  REMINDER: BAR-KOLLEKTEN VOUCHERS")
+            print("=" * 80)
+            print()
+            print(f"💰 There are {self.bar_kollekten_count} Bar-Kollekten vouchers that need to be marked as paid.")
+            print("   These vouchers already exist and just need payment recording.")
+            print()
+            print("   To mark them as paid:")
+            print("     • Standalone:    python3 scripts/mark_bar_kollekten_paid.py --mark-all")
+            print("     • Or use:        python3 scripts/vouchers/create_all_vouchers.py --run-all")
+            print("                      (creates vouchers + marks Bar-Kollekten)")
+            print()
+        
         print("=" * 80)
     
-    def run(self, create_single: bool = False, create_all: bool = False):
+    def mark_bar_kollekten_vouchers(self):
+        """
+        Mark all Bar-Kollekten vouchers as paid.
+        
+        Returns:
+            Tuple of (marked_count, failed_count)
+        """
+        try:
+            from mark_bar_kollekten_paid import BarKollektenMarker
+            
+            print("\n" + "=" * 80)
+            print("💰 MARKING BAR-KOLLEKTEN VOUCHERS AS PAID")
+            print("=" * 80)
+            print()
+            
+            marker = BarKollektenMarker()
+            marker.load_environment()
+            marker.initialize_api_client()
+            marker.open_database()
+            
+            vouchers = marker.get_open_bar_kollekten_vouchers()
+            
+            if not vouchers:
+                print("✓ No Bar-Kollekten vouchers to mark")
+                return 0, 0
+            
+            print(f"\n📋 Found {len(vouchers)} vouchers to mark as paid")
+            print(f"💳 Payment account: Kasse (ID: 5472950)")
+            print()
+            
+            marked_count = 0
+            failed_count = 0
+            
+            for i, voucher in enumerate(vouchers, 1):
+                voucher_id = voucher.get('id')
+                voucher_date = voucher.get('voucherDate', '')[:10]
+                amount = float(voucher.get('sumNet', 0))
+                
+                print(f"[{i}/{len(vouchers)}] Marking voucher {voucher_id} (€{amount:,.2f})...", end=' ')
+                
+                if marker.mark_voucher_as_paid(voucher):
+                    marked_count += 1
+                    print("✓")
+                else:
+                    failed_count += 1
+                    print("✗")
+            
+            print()
+            print("=" * 80)
+            print("💰 BAR-KOLLEKTEN MARKING COMPLETED")
+            print("=" * 80)
+            print()
+            print(f"✓ Successfully marked: {marked_count} voucher(s)")
+            if failed_count > 0:
+                print(f"❌ Failed: {failed_count} voucher(s)")
+            print()
+            
+            return marked_count, failed_count
+            
+        except Exception as e:
+            print(f"❌ Error marking Bar-Kollekten vouchers: {e}")
+            return 0, 0
+    
+    def run(self, create_single: bool = False, create_all: bool = False, run_all: bool = False):
         """
         Main execution flow.
         
         Args:
             create_single: Create one voucher per type (test mode)
             create_all: Create all vouchers for all types
+            run_all: Create all vouchers AND mark Bar-Kollekten as paid
         """
         # Run all creators and collect results
         self.run_all_creators()
@@ -578,8 +673,12 @@ class MasterVoucherCreator:
         self.print_summary(output_file)
         
         # Create vouchers if requested
-        if create_single or create_all:
+        if create_single or create_all or run_all:
             self.create_all_vouchers(create_single=create_single)
+        
+        # Mark Bar-Kollekten vouchers if run_all
+        if run_all and self.bar_kollekten_count > 0:
+            self.mark_bar_kollekten_vouchers()
 
 
 def main():
@@ -597,6 +696,11 @@ def main():
         action='store_true',
         help='Create ALL vouchers for ALL types'
     )
+    parser.add_argument(
+        '--run-all',
+        action='store_true',
+        help='Run ALL operations: Create vouchers AND mark Bar-Kollekten as paid'
+    )
     args = parser.parse_args()
     
     # Load environment
@@ -610,7 +714,11 @@ def main():
     
     # Run master creator
     master = MasterVoucherCreator()
-    master.run(create_single=args.create_single, create_all=args.create_all)
+    master.run(
+        create_single=args.create_single, 
+        create_all=args.create_all,
+        run_all=args.run_all
+    )
 
 
 if __name__ == '__main__':
