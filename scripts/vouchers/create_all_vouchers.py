@@ -31,7 +31,8 @@ from scripts.vouchers.create_vouchers_for_grace_baptist import GraceBaptistVouch
 from scripts.vouchers.create_vouchers_for_kontaktmission import KontaktmissionVoucherCreator
 from scripts.vouchers.create_vouchers_for_ebtc import EBTCVoucherCreator
 from scripts.vouchers.create_vouchers_for_jek_freizeit import JEKFreizeitVoucherCreator
-from scripts.vouchers.create_vouchers_for_bankeinzug import BankeinzugVoucherCreator
+from scripts.vouchers.create_vouchers_for_geldtransit import GeldtransitVoucherCreator
+from scripts.vouchers.create_vouchers_for_fees import FeesVoucherCreator
 
 
 class MasterVoucherCreator:
@@ -52,7 +53,8 @@ class MasterVoucherCreator:
         ('kontaktmission', KontaktmissionVoucherCreator, '🌍', 'Kontaktmission'),
         ('ebtc', EBTCVoucherCreator, '📚', 'EBTC (Donations)'),
         ('jek_freizeit', JEKFreizeitVoucherCreator, '🏕️', 'JEK Freizeit'),
-        ('bankeinzug', BankeinzugVoucherCreator, '🏦', 'Bankeinzug'),
+        ('geldtransit', GeldtransitVoucherCreator, '🏦', 'Geldtransit'),
+        ('fees', FeesVoucherCreator, '💳', 'Fees'),
     ]
     
     def __init__(self, create_mode: str = None):
@@ -247,17 +249,17 @@ class MasterVoucherCreator:
             show_donation = result['key'] == 'spenden'
             
             if show_donation:
-                markdown_lines.append("| # | Transaction ID | Date | Amount | Donor | Type | Cost Centre | Contact |")
-                markdown_lines.append("|---|----------------|------|--------|-------|------|-------------|---------|")
+                markdown_lines.append("| # | Date | Amount | Donor | Purpose | Type | Cost Centre | Contact |")
+                markdown_lines.append("|---|------|--------|-------|---------|------|-------------|---------|")
             else:
-                markdown_lines.append("| # | Transaction ID | Date | Amount | Payee/Payer | Cost Centre | Contact |")
-                markdown_lines.append("|---|----------------|------|--------|-------------|-------------|---------|")
+                markdown_lines.append("| # | Date | Amount | Payee/Payer | Purpose | Cost Centre | Contact |")
+                markdown_lines.append("|---|------|--------|-------------|---------|-------------|---------|")
             
             for i, plan in enumerate(result['voucher_plan'], 1):
-                txn_id = plan['transaction_id']
                 date = plan['transaction_date'][:10]
                 amount = plan['amount']
                 payee = plan['payee_payer_name'][:30]  # Truncate long names
+                purpose = plan.get('payment_purpose', '')[:40]  # Truncate long purposes
                 
                 cost_centre = plan.get('cost_centre')
                 if cost_centre:
@@ -280,12 +282,12 @@ class MasterVoucherCreator:
                         type_icon = "💝"
                     
                     markdown_lines.append(
-                        f"| {i} | {txn_id} | {date} | €{amount:,.2f} | {payee} | "
+                        f"| {i} | {date} | €{amount:,.2f} | {payee} | {purpose} | "
                         f"{type_icon} {donation_type} | {cc_display} | {contact_display} |"
                     )
                 else:
                     markdown_lines.append(
-                        f"| {i} | {txn_id} | {date} | €{amount:,.2f} | {payee} | "
+                        f"| {i} | {date} | €{amount:,.2f} | {payee} | {purpose} | "
                         f"{cc_display} | {contact_display} |"
                     )
             

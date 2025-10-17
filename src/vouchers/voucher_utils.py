@@ -208,11 +208,11 @@ def build_voucher_plan_markdown(
     
     # Table header - conditional based on type
     if show_donation_type:
-        markdown_lines.append("| Transaction ID | Date | Amount | Donor | Purpose | Type | Cost Centre | Contact | Belegkategorie | Voucher Number |")
-        markdown_lines.append("|----------------|------|--------|-------|---------|------|-------------|---------|----------------|----------------|")
+        markdown_lines.append("| Date | Amount | Donor | Purpose | Type | Cost Centre | Contact | Belegkategorie | Voucher Number |")
+        markdown_lines.append("|------|--------|-------|---------|------|-------------|---------|----------------|----------------|")
     else:
-        markdown_lines.append("| Transaction ID | Date | Amount | Payee/Payer | Cost Centre | Contact | Belegkategorie | Voucher Number |")
-        markdown_lines.append("|----------------|------|--------|-------------|-------------|---------|----------------|----------------|")
+        markdown_lines.append("| Date | Amount | Payee/Payer | Purpose | Cost Centre | Contact | Belegkategorie | Voucher Number |")
+        markdown_lines.append("|------|--------|-------------|---------|-------------|---------|----------------|----------------|")
     
     # Table rows
     for plan in voucher_plan:
@@ -220,6 +220,11 @@ def build_voucher_plan_markdown(
         cost_centre_display = f"✅ {cost_centre_name}" if plan['cost_centre'] else cost_centre_name
         contact_display = f"✅ {plan['contact']['name']}" if plan['contact'] else '❌ NOT FOUND'
         accounting_type_name = plan.get('accounting_type', {}).get('name', 'N/A')
+        
+        # Truncate purpose to max 40 chars
+        purpose = (plan.get('payment_purpose', '') or '')[:40]
+        if len(plan.get('payment_purpose', '') or '') > 40:
+            purpose += '...'
         
         if show_donation_type:
             # Donation type icon
@@ -233,20 +238,15 @@ def build_voucher_plan_markdown(
             else:
                 type_icon = "💝"
             
-            # Truncate purpose to max 40 chars
-            purpose = (plan.get('payment_purpose', '') or '')[:40]
-            if len(plan.get('payment_purpose', '') or '') > 40:
-                purpose += '...'
-            
             markdown_lines.append(
-                f"| {plan['transaction_id']} | {plan['transaction_date'][:10]} | €{plan['amount']:,.2f} | "
+                f"| {plan['transaction_date'][:10]} | €{plan['amount']:,.2f} | "
                 f"{plan['payee_payer_name']} | {purpose} | {type_icon} {donation_type} | {cost_centre_display} | "
                 f"{contact_display} | {accounting_type_name} | {plan['voucher_number']} |"
             )
         else:
             markdown_lines.append(
-                f"| {plan['transaction_id']} | {plan['transaction_date'][:10]} | €{plan['amount']:,.2f} | "
-                f"{plan['payee_payer_name']} | {cost_centre_display} | {contact_display} | {accounting_type_name} | {plan['voucher_number']} |"
+                f"| {plan['transaction_date'][:10]} | €{plan['amount']:,.2f} | "
+                f"{plan['payee_payer_name']} | {purpose} | {cost_centre_display} | {contact_display} | {accounting_type_name} | {plan['voucher_number']} |"
             )
     
     markdown_lines.append("")

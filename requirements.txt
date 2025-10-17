@@ -1,2 +1,5 @@
 requests>=2.31.0
 python-dotenv>=1.0.0
+
+# Actual Budget integration (for scripts/actual_budget_bridge)
+actualpy>=0.13.0

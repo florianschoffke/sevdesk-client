@@ -1,7 +1,7 @@
 # 📋 Unified Voucher Plan - All Types
 
-**Generated:** 2025-10-15 16:46:53
-**Total Vouchers:** 18
+**Generated:** 2025-10-17 15:00:29
+**Total Vouchers:** 9
 
 ## 📊 Summary by Type
 
@@ -15,41 +15,29 @@
 | 🌍 | Kontaktmission | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
 | 📚 | EBTC (Donations) | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
 | 🏕️ | JEK Freizeit | 0 | Durchlaufende Posten | ⚪ None |
-| 🏦 | Bankeinzug | 18 | Geldtransit | ✅ Ready |
+| 🏦 | Geldtransit | 0 | Geldtransit | ⚪ None |
+| 💳 | Fees | 9 | Kontoführung / Kartengebühren | ✅ Ready |
 
-**Total:** 18 vouchers across 1 types
+**Total:** 9 vouchers across 1 types
 
-## 🏦 Bankeinzug
+## 💳 Fees
 
-**Count:** 18 vouchers
-**Accounting Type:** Geldtransit (ID: 40)
+**Count:** 9 vouchers
+**Accounting Type:** Kontoführung / Kartengebühren (ID: 74)
 
-| # | Transaction ID | Date | Amount | Payee/Payer | Cost Centre | Contact |
-|---|----------------|------|--------|-------------|-------------|---------|
-| 1 | 1781148672 | 2025-09-02 | €101.86 | Bankeinzug | ❌ | ✅ |
-| 2 | 1778187796 | 2025-08-20 | €98.59 | Bankeinzug | ❌ | ✅ |
-| 3 | 1773989958 | 2025-08-02 | €104.49 | Bankeinzug | ❌ | ✅ |
-| 4 | 1765721277 | 2025-07-02 | €94.45 | Bankeinzug | ❌ | ✅ |
-| 5 | 1758424050 | 2025-06-02 | €98.18 | Bankeinzug | ❌ | ✅ |
-| 6 | 1750910942 | 2025-05-02 | €98.59 | Bankeinzug | ❌ | ✅ |
-| 7 | 1747674278 | 2025-04-16 | €25.00 | Bankeinzug | ❌ | ✅ |
-| 8 | 1746183228 | 2025-04-10 | €116.95 | Bankeinzug | ❌ | ✅ |
-| 9 | 1743867571 | 2025-04-02 | €74.60 | Bankeinzug | ❌ | ✅ |
-| 10 | 1743586314 | 2025-04-02 | €103.06 | Bankeinzug | ❌ | ✅ |
-| 11 | 1735734472 | 2025-03-02 | €107.21 | Bankeinzug | ❌ | ✅ |
-| 12 | 1728537047 | 2025-02-02 | €107.32 | Bankeinzug | ❌ | ✅ |
-| 13 | 1727125127 | 2025-01-27 | €107.14 | Bankeinzug | ❌ | ✅ |
-| 14 | 1727125125 | 2025-01-27 | €12.39 | Bankeinzug | ❌ | ✅ |
-| 15 | 1727125123 | 2025-01-27 | €12.39 | Bankeinzug | ❌ | ✅ |
-| 16 | 1727125121 | 2025-01-27 | €12.39 | Bankeinzug | ❌ | ✅ |
-| 17 | 1726381576 | 2025-01-23 | €1,527.00 | Bankeinzug | ❌ | ✅ |
-| 18 | 1719519149 | 2025-01-02 | €107.38 | Bankeinzug | ❌ | ✅ |
+| # | Date | Amount | Payee/Payer | Purpose | Cost Centre | Contact |
+|---|------|--------|-------------|---------|-------------|---------|
+| 1 | 2025-09-30 | €-42.58 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 2 | 2025-08-31 | €-36.14 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 3 | 2025-07-31 | €-38.66 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 4 | 2025-06-30 | €-42.02 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 5 | 2025-05-30 | €-40.34 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 6 | 2025-04-30 | €-49.30 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 7 | 2025-03-31 | €-40.90 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 8 | 2025-02-28 | €-39.78 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
+| 9 | 2025-01-31 | €-37.54 | Unknown | Saldo der Abschlussposten QM - Support 0 | ✅ Buchführung, Bankgeb | ✅ |
 
-*See individual plan file: `voucher_plan_bankeinzug.md`*
-
-## ⚠️ Warnings
-
-- ⚠️  **Bankeinzug**: 18 voucher(s) without cost centre
+*See individual plan file: `voucher_plan_fees.md`*
 
 ## 🚀 Next Steps
 
@@ -64,5 +52,5 @@ python3 create_all_vouchers.py --create-all
 
 ### Option 2: Create by Individual Type
 ```bash
-python3 create_vouchers_for_bankeinzug.py --create-all  # 🏦 Bankeinzug
+python3 create_vouchers_for_fees.py --create-all  # 💳 Fees
 ```
