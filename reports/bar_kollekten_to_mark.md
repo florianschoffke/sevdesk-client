@@ -1,29 +1,10 @@
-# 📋 Unified Voucher Plan - All Types
+# Bar-Kollekten Vouchers to Mark as Paid
 
-**Generated:** 2025-10-17 21:23:39
-**Total Vouchers:** 0
+Generated: 2025-10-17 21:21:58
 
-## 📊 Summary by Type
 
-| Icon | Type | Count | Accounting Type | Status |
-|------|------|-------|-----------------|--------|
-| 💰 | Gehalt (Salaries) | 0 | Lohn / Gehalt | ⚪ None |
-| 🎓 | ÜLP (Übungsleiterpauschale) | 0 | Ehrenamtspauschale/Übungsleiterpauschale | ⚪ None |
-| 💝 | Spenden (Donations) | 0 | Spendeneingang | ⚪ None |
-| 🏥 | Krankenkassen (Health Insurance) | 0 | Krankenkasse | ⚪ None |
-| ⛪ | Grace Baptist | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
-| 🌍 | Kontaktmission | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
-| 📚 | EBTC (Donations) | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
-| 🏕️ | JEK Freizeit | 0 | Durchlaufende Posten | ⚪ None |
-| 🏦 | Geldtransit | 0 | Geldtransit | ⚪ None |
-| 💳 | Fees | 0 | Kontoführung / Kartengebühren | ⚪ None |
+These vouchers need to be marked as paid to the **Kasse** (cash register) account.
 
-**Total:** 0 vouchers across 0 types
-
-## 💰 Bar-Kollekten - Vouchers to Mark as Paid
-
-**Count:** 37 vouchers
-**Action:** Mark as paid to **Kasse** account
 
 | # | Voucher ID | Date | Amount | Description |
 |---|------------|------|--------|-------------|
@@ -66,30 +47,3 @@
 | 37 | 101437820 | 2024-12-15 | €2.00 | 522 |
 
 **Total: 37 voucher(s) - €3,364.51**
-
-
-**To mark these vouchers as paid:**
-```bash
-# Test with single voucher
-python3 scripts/mark_bar_kollekten_paid.py --mark-single
-
-# Mark all vouchers
-python3 scripts/mark_bar_kollekten_paid.py --mark-all
-```
-
-*See detailed report: `reports/bar_kollekten_to_mark.md`*
-
-## 🚀 Next Steps
-
-### Option 1: Create All Vouchers at Once
-```bash
-# Test with one voucher per type
-python3 scripts/vouchers/create_all_vouchers.py --create-single
-
-# Create ALL vouchers for ALL types
-python3 scripts/vouchers/create_all_vouchers.py --create-all
-```
-
-### Option 2: Create by Individual Type
-```bash
-```

@@ -34,6 +34,9 @@ from scripts.vouchers.create_vouchers_for_jek_freizeit import JEKFreizeitVoucher
 from scripts.vouchers.create_vouchers_for_geldtransit import GeldtransitVoucherCreator
 from scripts.vouchers.create_vouchers_for_fees import FeesVoucherCreator
 
+# Add path for mark_bar_kollekten_paid script (it's one level up)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 class MasterVoucherCreator:
     """
@@ -66,6 +69,7 @@ class MasterVoucherCreator:
         """
         self.create_mode = create_mode
         self.results: List[Dict] = []
+        self.bar_kollekten_vouchers: List[Dict] = []
         self.total_vouchers = 0
         self.total_created = 0
         self.total_failed = 0
@@ -192,6 +196,38 @@ class MasterVoucherCreator:
             'accounting_type': creator.accounting_type
         }
     
+    def get_bar_kollekten_vouchers(self):
+        """
+        Get Bar-Kollekten vouchers that need to be marked as paid.
+        Returns a markdown table section.
+        """
+        try:
+            from mark_bar_kollekten_paid import BarKollektenMarker
+            
+            print("\n" + "=" * 80)
+            print("💰 Checking Bar-Kollekten vouchers to mark as paid...")
+            print("=" * 80)
+            
+            marker = BarKollektenMarker()
+            marker.load_environment()
+            marker.initialize_api_client()
+            marker.open_database()
+            
+            vouchers = marker.get_open_bar_kollekten_vouchers()
+            
+            if vouchers:
+                print(f"✓ Found {len(vouchers)} Bar-Kollekten vouchers to mark as paid")
+                # Generate the markdown table
+                markdown_table = marker.build_markdown_table(vouchers)
+                return markdown_table, len(vouchers)
+            else:
+                print("✓ No Bar-Kollekten vouchers to mark as paid")
+                return None, 0
+                
+        except Exception as e:
+            print(f"❌ Error checking Bar-Kollekten vouchers: {e}")
+            return None, 0
+    
     def generate_unified_markdown(self) -> str:
         """
         Generate unified markdown report for all vouchers.
@@ -199,7 +235,8 @@ class MasterVoucherCreator:
         Returns:
             Path to the generated markdown file
         """
-        output_file = "voucher_plan_all.md"
+        # Output to project root (two levels up from scripts/vouchers/)
+        output_file = os.path.join(project_root, "voucher_plan_all.md")
         
         markdown_lines = []
         
@@ -295,6 +332,28 @@ class MasterVoucherCreator:
             markdown_lines.append(f"*See individual plan file: `voucher_plan_{result['key']}.md`*")
             markdown_lines.append("")
         
+        # Bar-Kollekten section
+        bar_kollekten_table, bar_kollekten_count = self.get_bar_kollekten_vouchers()
+        if bar_kollekten_table:
+            markdown_lines.append("## 💰 Bar-Kollekten - Vouchers to Mark as Paid")
+            markdown_lines.append("")
+            markdown_lines.append(f"**Count:** {bar_kollekten_count} vouchers")
+            markdown_lines.append(f"**Action:** Mark as paid to **Kasse** account")
+            markdown_lines.append("")
+            markdown_lines.append(bar_kollekten_table)
+            markdown_lines.append("")
+            markdown_lines.append("**To mark these vouchers as paid:**")
+            markdown_lines.append("```bash")
+            markdown_lines.append("# Test with single voucher")
+            markdown_lines.append("python3 scripts/mark_bar_kollekten_paid.py --mark-single")
+            markdown_lines.append("")
+            markdown_lines.append("# Mark all vouchers")
+            markdown_lines.append("python3 scripts/mark_bar_kollekten_paid.py --mark-all")
+            markdown_lines.append("```")
+            markdown_lines.append("")
+            markdown_lines.append(f"*See detailed report: `reports/bar_kollekten_to_mark.md`*")
+            markdown_lines.append("")
+        
         # Warnings section
         warnings = []
         for result in self.results:
@@ -322,10 +381,10 @@ class MasterVoucherCreator:
         markdown_lines.append("### Option 1: Create All Vouchers at Once")
         markdown_lines.append("```bash")
         markdown_lines.append("# Test with one voucher per type")
-        markdown_lines.append("python3 create_all_vouchers.py --create-single")
+        markdown_lines.append("python3 scripts/vouchers/create_all_vouchers.py --create-single")
         markdown_lines.append("")
         markdown_lines.append("# Create ALL vouchers for ALL types")
-        markdown_lines.append("python3 create_all_vouchers.py --create-all")
+        markdown_lines.append("python3 scripts/vouchers/create_all_vouchers.py --create-all")
         markdown_lines.append("```")
         markdown_lines.append("")
         markdown_lines.append("### Option 2: Create by Individual Type")
@@ -334,7 +393,7 @@ class MasterVoucherCreator:
         for result in self.results:
             if result['voucher_count'] > 0:
                 script_name = f"create_vouchers_for_{result['key']}.py"
-                markdown_lines.append(f"python3 {script_name} --create-all  # {result['icon']} {result['name']}")
+                markdown_lines.append(f"python3 scripts/vouchers/{script_name} --create-all  # {result['icon']} {result['name']}")
         
         markdown_lines.append("```")
         markdown_lines.append("")
