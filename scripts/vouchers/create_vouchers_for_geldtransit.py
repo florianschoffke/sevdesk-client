@@ -142,15 +142,115 @@ class GeldtransitVoucherCreator(VoucherCreatorBase):
     def is_income_voucher(self) -> bool:
         """
         Determine if these are income or expense vouchers.
-        Geldtransit can be both, so we check the amount sign.
+        Geldtransit can be both, so we need to check per transaction.
         """
-        # This will be called per transaction, but we need to handle both
-        # For now, return True (income) as default - the base class handles sign
-        return True
+        # This method is called by the base class, but it doesn't have access
+        # to individual transaction data. We need to override the voucher creation
+        # to handle this per transaction.
+        return True  # Default, will be overridden in voucher creation
     
     def has_cost_centre(self) -> bool:
         """Geldtransit vouchers do not use cost centres."""
         return False
+    
+    def _is_paypal_fee_transaction(self, plan: Dict) -> bool:
+        """
+        Determine if this is a PayPal fee transaction (expense).
+        
+        Args:
+            plan: Voucher plan item
+            
+        Returns:
+            True if this is a PayPal fee, False otherwise
+        """
+        payee_name = plan.get('payee_payer_name', '')
+        return 'PayPal (Europe) S.a r.l. et Cie, S. C.A.' in payee_name
+    
+    def create_vouchers(
+        self,
+        voucher_plan: List[Dict],
+        check_account_id: str,
+        sev_client_id: str
+    ) -> tuple:
+        """
+        Override to handle income vs expense determination per transaction.
+        """
+        from src.vouchers.voucher_utils import create_voucher_for_transaction
+        
+        print("=" * 80)
+        print("CREATING VOUCHERS")
+        print("=" * 80)
+        print()
+        
+        # Determine which vouchers to create
+        vouchers_to_create = [voucher_plan[0]] if self.args.create_single else voucher_plan
+        
+        print(f"Creating {len(vouchers_to_create)} voucher(s)...")
+        print()
+        
+        created_vouchers = []
+        failed_vouchers = []
+        
+        for i, plan in enumerate(vouchers_to_create, 1):
+            print(f"[{i}/{len(vouchers_to_create)}] Creating voucher for transaction {plan['transaction_id']}...")
+            print(f"    Amount: €{plan['amount']:,.2f}")
+            print(f"    Payee/Payer: {plan['payee_payer_name']}")
+            if plan.get('cost_centre'):
+                print(f"    Cost Centre: {plan['cost_centre']['name']}")
+            if plan.get('contact'):
+                print(f"    Contact: {plan['contact']['name']}")
+            
+            # Determine if this is income or expense per transaction
+            is_paypal_fee = self._is_paypal_fee_transaction(plan)
+            is_income = not is_paypal_fee  # PayPal fees are expenses, others are income
+            
+            print(f"    Type: {'Expense' if not is_income else 'Income'}")
+            
+            try:
+                response = create_voucher_for_transaction(
+                    self.client,
+                    plan,
+                    check_account_id,
+                    sev_client_id,
+                    is_income=is_income
+                )
+                
+                if response and 'objects' in response:
+                    # Extract voucher ID from nested structure
+                    voucher_id = response['objects'].get('voucher', {}).get('id')
+                    print(f"    ✓ Voucher created successfully! ID: {voucher_id}")
+                    
+                    # Book voucher amount to link it to the transaction
+                    print(f"    Booking voucher amount to link to transaction...")
+                    try:
+                        book_response = self.client.book_voucher_amount(
+                            voucher_id=voucher_id,
+                            transaction_id=plan['transaction_id'],
+                            check_account_id=check_account_id,
+                            amount=plan['amount'],
+                            date=plan['transaction_date'][:10],
+                            is_income=is_income
+                        )
+                        print(f"    ✓ Voucher booked and linked to transaction!")
+                    except Exception as link_error:
+                        print(f"    ⚠️  Warning: Failed to book/link voucher: {str(link_error)}")
+                    
+                    created_vouchers.append({
+                        'plan': plan,
+                        'voucher_id': voucher_id,
+                        'response': response
+                    })
+                else:
+                    print(f"    ❌ Failed: Unexpected response format")
+                    failed_vouchers.append(plan)
+                    
+            except Exception as e:
+                print(f"    ❌ Failed: {str(e)}")
+                failed_vouchers.append(plan)
+            
+            print()
+        
+        return created_vouchers, failed_vouchers
 
 
 def main():

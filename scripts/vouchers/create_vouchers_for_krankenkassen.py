@@ -82,7 +82,8 @@ class KrankenkassenVoucherCreator(VoucherCreatorBase):
             # Match if payee is a known health insurance provider
             if ('Techniker Krankenkasse' in payee_name or 
                 'Knappschaft-Bahn-See' in payee_name or
-                'Knappschaft' in payee_name):
+                'Knappschaft' in payee_name or
+                'Verwaltungs-Berufsgenossenschaft' in payee_name):
                 krankenkassen_transactions.append(txn)
         
         return krankenkassen_transactions
