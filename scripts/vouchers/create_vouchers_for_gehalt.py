@@ -23,7 +23,8 @@ from src.vouchers.voucher_utils import find_cost_centre_by_name, find_contact_by
 
 # Custom mappings for Gehalt script
 COST_CENTRE_MAPPINGS = {
-    'gwendolyn dewhurst': 'gwen dewhurst',
+    'gwendolyn ruth dewhurst': 'gwen dewhurst',  # Full name from transactions
+    'gwendolyn dewhurst': 'gwen dewhurst',       # Alternative short form
     'samuel jeanrichard': 'samuel jeanrichard (intern)',
 }
 
