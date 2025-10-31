@@ -1,9 +1,19 @@
 # Bar-Kollekten Vouchers to Mark as Paid
 
-Generated: 2025-10-17 21:40:49
+Generated: 2025-10-31 21:32:57
 
 
 These vouchers need to be marked as paid to the **Kasse** (cash register) account.
 
 
-No Bar-Kollekten vouchers to mark as paid.
+| # | Voucher ID | Date | Amount | Description |
+|---|------------|------|--------|-------------|
+| 1 | 127779473 | 2025-10-26 | €405.00 | 480 |
+| 2 | 127779129 | 2025-10-19 | €10.00 | 479 |
+| 3 | 127779101 | 2025-10-19 | €144.65 | 478 |
+| 4 | 127779049 | 2025-10-19 | €242.00 | 477 |
+| 5 | 127778851 | 2025-10-12 | €5.00 | 476 |
+| 6 | 127778805 | 2025-10-12 | €163.00 | 475 |
+| 7 | 127778730 | 2025-10-12 | €94.00 | 474 |
+
+**Total: 7 voucher(s) - €1,063.65**

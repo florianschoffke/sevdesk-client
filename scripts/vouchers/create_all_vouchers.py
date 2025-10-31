@@ -35,9 +35,6 @@ from scripts.vouchers.create_vouchers_for_jek_freizeit import JEKFreizeitVoucher
 from scripts.vouchers.create_vouchers_for_geldtransit import GeldtransitVoucherCreator
 from scripts.vouchers.create_vouchers_for_fees import FeesVoucherCreator
 
-# Add path for mark_bar_kollekten_paid script (it's one level up)
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 class MasterVoucherCreator:
     """
@@ -204,6 +201,8 @@ class MasterVoucherCreator:
         Returns a markdown table section.
         """
         try:
+            # Import from scripts/ directory (one level up)
+            sys.path.insert(0, os.path.join(project_root, 'scripts'))
             from mark_bar_kollekten_paid import BarKollektenMarker
             
             print("\n" + "=" * 80)
@@ -599,6 +598,8 @@ class MasterVoucherCreator:
             Tuple of (marked_count, failed_count)
         """
         try:
+            # Import from scripts/ directory (one level up)
+            sys.path.insert(0, os.path.join(project_root, 'scripts'))
             from mark_bar_kollekten_paid import BarKollektenMarker
             
             print("\n" + "=" * 80)
@@ -671,6 +672,27 @@ class MasterVoucherCreator:
         
         # Print summary
         self.print_summary(output_file)
+        
+        # Special confirmation for run_all mode (only if there's something to do)
+        if run_all and (self.total_vouchers > 0 or self.bar_kollekten_count > 0):
+            print("\n" + "=" * 80)
+            print("⚠️  RUN-ALL MODE CONFIRMATION")
+            print("=" * 80)
+            print()
+            print("This will:")
+            if self.total_vouchers > 0:
+                print(f"  1. Create ALL vouchers for ALL types ({self.total_vouchers} voucher(s))")
+            if self.bar_kollekten_count > 0:
+                action_num = 2 if self.total_vouchers > 0 else 1
+                print(f"  {action_num}. Mark {self.bar_kollekten_count} Bar-Kollekten voucher(s) as paid to Kasse")
+            print()
+            print("⚠️  This is a comprehensive operation that affects multiple vouchers!")
+            print()
+            response = input("Do you want to proceed with RUN-ALL? (y/N): ").strip().lower()
+            if response != 'y':
+                print("\n❌ RUN-ALL cancelled by user.")
+                return
+            print()
         
         # Create vouchers if requested
         if create_single or create_all or run_all:
