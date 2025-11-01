@@ -17,7 +17,7 @@ filter,Gwendolyn Dewhurst,Sent from N26,,,100,contains
 filter,Jonathan Witt Elisabeth Witt,Zur Ehre Gottes,,,100,contains
 filter,Karina Jennewein,Für die Gemeinde,,,100,startswith
 filter,MICHAEL BARTHOLOMAE UND,EGB,,,100,contains
-type,,Artur Jeske,jeske,Jeske (Durchlaufende Posten),10,contains
+filter,Paul Klause Adeline Klause,Artur Jeske,,,100,contains
 type,,Spende Tobias Zimmermann,tobias,Tobias Zimmermann (Spende für Tobias),20,contains
 type,,Tobi Zimmermann,tobias,Tobias Zimmermann (Spende für Tobias),20,contains
 type,,Mission,mission,Spendeneingänge Missionare,30,contains
