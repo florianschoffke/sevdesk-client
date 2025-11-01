@@ -1,15 +1,15 @@
 # 📋 Unified Voucher Plan - All Types
 
-**Generated:** 2025-10-22 08:59:13
-**Total Vouchers:** 5
+**Generated:** 2025-10-31 21:37:49
+**Total Vouchers:** 0
 
 ## 📊 Summary by Type
 
 | Icon | Type | Count | Accounting Type | Status |
 |------|------|-------|-----------------|--------|
-| 💰 | Gehalt (Salaries) | 4 | Lohn / Gehalt | ✅ Ready |
+| 💰 | Gehalt (Salaries) | 0 | Lohn / Gehalt | ⚪ None |
 | 🎓 | ÜLP (Übungsleiterpauschale) | 0 | Ehrenamtspauschale/Übungsleiterpauschale | ⚪ None |
-| 💝 | Spenden (Donations) | 1 | Spendeneingang | ✅ Ready |
+| 💝 | Spenden (Donations) | 0 | Spendeneingang | ⚪ None |
 | 🏥 | Krankenkassen (Health Insurance) | 0 | Krankenkasse | ⚪ None |
 | ⛪ | Grace Baptist | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
 | 🌍 | Kontaktmission | 0 | Zuwendungen, Spenden für kirchliche, religiöse und gemeinnützige Zwecke | ⚪ None |
@@ -18,32 +18,7 @@
 | 🏦 | Geldtransit | 0 | Geldtransit | ⚪ None |
 | 💳 | Fees | 0 | Kontoführung / Kartengebühren | ⚪ None |
 
-**Total:** 5 vouchers across 2 types
-
-## 💰 Gehalt (Salaries)
-
-**Count:** 4 vouchers
-**Accounting Type:** Lohn / Gehalt (ID: 58)
-
-| # | Date | Amount | Payee/Payer | Purpose | Cost Centre | Contact |
-|---|------|--------|-------------|---------|-------------|---------|
-| 1 | 2025-10-21 | €-520.00 | GWENDOLYN RUTH DEWHURST | Gehalt 10/2025 PNR 00110 | ✅ Gwen Dewhurst | ✅ |
-| 2 | 2025-10-21 | €-556.00 | Samuel JeanRichard-dit-Bressel | Gehalt 10/2025 PNR 00113 | ✅ Samuel Jeanrichard ( | ✅ |
-| 3 | 2025-10-21 | €-1,591.50 | Jonathan de Vries | Gehalt 10/2025 PNR 00108 | ✅ Jonathan de Vries | ✅ |
-| 4 | 2025-10-21 | €-520.00 | THOMAS HOCHSTETTER | Gehalt 10/2025 PNR 00109 | ✅ Thomas Hochstetter | ✅ |
-
-*See individual plan file: `voucher_plan_gehalt.md`*
-
-## 💝 Spenden (Donations)
-
-**Count:** 1 vouchers
-**Accounting Type:** Spendeneingang (ID: 935667)
-
-| # | Date | Amount | Donor | Purpose | Type | Cost Centre | Contact |
-|---|------|--------|-------|---------|------|-------------|---------|
-| 1 | 2025-10-21 | €450.00 | Thomas Hochstetter, Nina Hochs | Spende | 💝 general | ✅ Spendeneingänge Kont | ✅ |
-
-*See individual plan file: `voucher_plan_spenden.md`*
+**Total:** 0 vouchers across 0 types
 
 ## 🚀 Next Steps
 
@@ -64,6 +39,4 @@ python3 scripts/vouchers/create_all_vouchers.py --create-all
 
 ### Option 3: Create by Individual Type
 ```bash
-python3 scripts/vouchers/create_vouchers_for_gehalt.py --create-all  # 💰 Gehalt (Salaries)
-python3 scripts/vouchers/create_vouchers_for_spenden.py --create-all  # 💝 Spenden (Donations)
 ```
