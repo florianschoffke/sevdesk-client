@@ -1,0 +1,25 @@
+rule_type,payer_name_pattern,purpose_pattern,donation_type,cost_centre_name,priority,match_mode
+filter,,Spende,,,100,contains
+filter,,SPENDE,,,100,contains
+filter,,Tobi Zimmermann,,,90,contains
+filter,,Unterstützung,,,100,contains
+filter,,Unterstuetzung,,,100,contains
+filter,,Gemeindespende,,,100,contains
+filter,,für die Gemeinde,,,100,contains
+filter,,MONATLICHE SPENDE,,,100,contains
+filter,,GEMEINDE,,,100,contains
+filter,,Spends,,,100,contains
+filter,,Offering,,,100,contains
+filter,,Monatsspende,,,100,startswith
+filter,,GEMEINDE SPENDE,,,100,contains
+filter,Daniel Goering und Lorraine Goering,Zehnte,,,100,contains
+filter,Gwendolyn Dewhurst,Sent from N26,,,100,contains
+filter,Jonathan Witt Elisabeth Witt,Zur Ehre Gottes,,,100,contains
+filter,Karina Jennewein,Für die Gemeinde,,,100,startswith
+filter,MICHAEL BARTHOLOMAE UND,EGB,,,100,contains
+type,,Artur Jeske,jeske,Jeske (Durchlaufende Posten),10,contains
+type,,Spende Tobias Zimmermann,tobias,Tobias Zimmermann (Spende für Tobias),20,contains
+type,,Tobi Zimmermann,tobias,Tobias Zimmermann (Spende für Tobias),20,contains
+type,,Mission,mission,Spendeneingänge Missionare,30,contains
+type,,Missionar,mission,Spendeneingänge Missionare,30,contains
+type,,,general,Spendeneingänge Konto,1000,contains

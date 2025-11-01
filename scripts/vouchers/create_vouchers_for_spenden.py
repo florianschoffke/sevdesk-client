@@ -5,28 +5,20 @@ Create vouchers for Spenden (Donations) transactions.
 This script finds open incoming transactions (amount > 0) with donation-related keywords
 in the payment purpose and creates vouchers for them.
 
-Donation keywords: "Spende", "SPENDE", "Tobi Zimmermann", "Unterstützung", "Gemeindespende",
-"für die Gemeinde", "MONATLICHE SPENDE", "GEMEINDE", "Spends", "Offering", 
-starts with "Monatsspende", "GEMEINDE SPENDE"
+Donation matching rules are configured in config/donation_rules.csv with support for:
+- Filter rules: Determine if a transaction is a donation based on payer name or purpose patterns
+- Type rules: Determine donation type and cost centre based on patterns (with priority)
+- Match modes: 'contains', 'startswith', or 'exact' matching
 
-Four types of donations:
-1. Mission donations: purpose contains "Mission" or "Missionar" 
-   → Cost Centre: "Spendeneingänge Missionare"
-2. Jeske donations: purpose contains "Artur Jeske"
-   → Cost Centre: "Jeske (Durchlaufende Posten)"
-3. Tobias donations: purpose contains "Spende Tobias Zimmermann" or "Tobi Zimmermann"
-   → Cost Centre: "Tobias Zimmermann (Spende für Tobias)"
-4. General donations: all others (including "Unterstützung", "Gemeindespende", etc.)
-   → Cost Centre: "Spendeneingänge Konto"
-   
 All use Accounting Type: "Spendeneingang"
 
-REFACTORED VERSION using VoucherCreatorBase.
+REFACTORED VERSION using VoucherCreatorBase and external CSV configuration.
 """
 import os
 import sys
 import json
-from typing import List, Dict, Optional
+import csv
+from typing import List, Dict, Optional, Tuple
 
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,13 +29,42 @@ from src.vouchers.voucher_creator_base import VoucherCreatorBase
 from src.vouchers.voucher_utils import find_contact_by_name
 
 
-# Cost centre names for different donation types
-COST_CENTRE_NAMES = {
-    'mission': 'Spendeneingänge Missionare',
-    'general': 'Spendeneingänge Konto',
-    'jeske': 'Jeske (Durchlaufende Posten)',
-    'tobias': 'Tobias Zimmermann (Spende für Tobias)',
-}
+class DonationRule:
+    """Represents a donation matching rule from CSV."""
+    
+    def __init__(self, rule_dict: Dict):
+        """Initialize rule from CSV row."""
+        self.rule_type = rule_dict.get('rule_type', '')
+        self.payer_name_pattern = rule_dict.get('payer_name_pattern', '').strip()
+        self.purpose_pattern = rule_dict.get('purpose_pattern', '').strip()
+        self.donation_type = rule_dict.get('donation_type', '').strip()
+        self.cost_centre_name = rule_dict.get('cost_centre_name', '').strip()
+        self.priority = int(rule_dict.get('priority', 999))
+        self.match_mode = rule_dict.get('match_mode', 'contains').strip()
+    
+    def matches(self, payer_name: str, purpose: str) -> bool:
+        """Check if this rule matches the given payer name and purpose."""
+        # Check payer name pattern if specified
+        if self.payer_name_pattern:
+            if not self._pattern_matches(payer_name or '', self.payer_name_pattern):
+                return False
+        
+        # Check purpose pattern if specified
+        if self.purpose_pattern:
+            if not self._pattern_matches(purpose or '', self.purpose_pattern):
+                return False
+        
+        # If we get here, all specified patterns matched (or no patterns were specified)
+        return True
+    
+    def _pattern_matches(self, text: str, pattern: str) -> bool:
+        """Check if pattern matches text based on match mode."""
+        if self.match_mode == 'exact':
+            return text == pattern
+        elif self.match_mode == 'startswith':
+            return text.startswith(pattern)
+        else:  # contains (default)
+            return pattern in text
 
 
 class SpendenVoucherCreator(VoucherCreatorBase):
@@ -53,6 +74,43 @@ class SpendenVoucherCreator(VoucherCreatorBase):
         """Initialize the creator."""
         super().__init__()
         self.cost_centres = {}  # Dict of donation_type -> cost_centre
+        self.filter_rules: List[DonationRule] = []
+        self.type_rules: List[DonationRule] = []
+        self.cost_centre_names = set()  # Track unique cost centre names
+        self._load_donation_rules()
+    
+    def _load_donation_rules(self):
+        """Load donation rules from CSV file."""
+        config_path = os.path.join(project_root, 'config', 'donation_rules.csv')
+        
+        if not os.path.exists(config_path):
+            print(f"❌ Error: Donation rules file not found: {config_path}")
+            print("   Please create config/donation_rules.csv with donation matching rules.")
+            sys.exit(1)
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # Skip comment lines and empty lines
+                if not row.get('rule_type') or row.get('rule_type').startswith('#'):
+                    continue
+                
+                rule = DonationRule(row)
+                
+                if rule.rule_type == 'filter':
+                    self.filter_rules.append(rule)
+                elif rule.rule_type == 'type':
+                    self.type_rules.append(rule)
+                    if rule.cost_centre_name:
+                        self.cost_centre_names.add(rule.cost_centre_name)
+        
+        # Sort type rules by priority (lower number = higher priority)
+        self.type_rules.sort(key=lambda r: r.priority)
+        
+        print(f"✓ Loaded {len(self.filter_rules)} filter rules and {len(self.type_rules)} type rules from CSV")
+        print(f"✓ Found {len(self.cost_centre_names)} unique cost centres in rules")
+        print()
+
     
     def get_script_name(self) -> str:
         """Return script name."""
@@ -64,7 +122,7 @@ class SpendenVoucherCreator(VoucherCreatorBase):
     
     def find_accounting_type(self, db) -> bool:
         """
-        Find accounting type and also load all cost centres for donation types.
+        Find accounting type and also load all cost centres from rules.
         
         Returns:
             True if found, False otherwise
@@ -73,17 +131,17 @@ class SpendenVoucherCreator(VoucherCreatorBase):
         if not super().find_accounting_type(db):
             return False
         
-        # Also find cost centres for all donation types
+        # Load cost centres based on unique names from rules
         missing_cost_centres = []
         
-        for donation_type, cc_name in COST_CENTRE_NAMES.items():
+        for cc_name in sorted(self.cost_centre_names):
             cc = self._find_cost_centre_by_exact_name(db, cc_name)
             if cc:
-                self.cost_centres[donation_type] = cc
-                print(f"✓ Found cost centre ({donation_type}): {cc['name']} (ID: {cc['id']})")
+                self.cost_centres[cc_name] = cc
+                print(f"✓ Found cost centre: {cc['name']} (ID: {cc['id']})")
             else:
                 missing_cost_centres.append(cc_name)
-                print(f"❌ Missing cost centre ({donation_type}): {cc_name}")
+                print(f"❌ Missing cost centre: {cc_name}")
         
         print()
         
@@ -96,28 +154,22 @@ class SpendenVoucherCreator(VoucherCreatorBase):
         return True
     
     def filter_transactions(self, all_transactions: List[Dict]) -> List[Dict]:
-        """Filter transactions with donation keywords and positive amounts."""
+        """Filter transactions with donation keywords and positive amounts using CSV rules."""
         spenden_transactions = []
         for txn in all_transactions:
             payment_purpose = txn.get('paymt_purpose', '') or ''
             amount = float(txn.get('amount', 0))
             
-            # Must be income (positive) and match one of the donation patterns
+            # Must be income (positive)
             if amount > 0:
-                is_spende = (
-                    'Spende' in payment_purpose or 
-                    'SPENDE' in payment_purpose or
-                    'Tobi Zimmermann' in payment_purpose or
-                    'Unterstützung' in payment_purpose or
-                    'Unterstuetzung' in payment_purpose or
-                    'Gemeindespende' in payment_purpose or
-                    'für die Gemeinde' in payment_purpose or
-                    'MONATLICHE SPENDE' in payment_purpose or
-                    'GEMEINDE' in payment_purpose or
-                    'Spends' in payment_purpose or
-                    'Offering' in payment_purpose or
-                    payment_purpose.startswith('Monatsspende') or
-                    'GEMEINDE SPENDE' in payment_purpose
+                # Get payer name from raw data
+                raw_data = json.loads(txn.get('raw_data', '{}'))
+                payee_payer_name = raw_data.get('payeePayerName', '')
+                
+                # Check if any filter rule matches
+                is_spende = any(
+                    rule.matches(payee_payer_name, payment_purpose)
+                    for rule in self.filter_rules
                 )
                 
                 if is_spende:
@@ -136,9 +188,12 @@ class SpendenVoucherCreator(VoucherCreatorBase):
         raw_data = json.loads(transaction.get('raw_data', '{}'))
         payee_payer_name = raw_data.get('payeePayerName', 'Unknown')
         
-        # Determine donation type and cost centre
+        # Determine donation type and cost centre using CSV rules
         payment_purpose = transaction.get('paymt_purpose')
-        donation_type, cost_centre = self._determine_donation_type_and_cost_centre(payment_purpose)
+        donation_type, cost_centre = self._determine_donation_type_and_cost_centre(
+            payment_purpose,
+            payee_payer_name
+        )
         
         # Find matching contact (donor) - IMPORTANT for tax tracking!
         contact = self._find_spenden_contact(payee_payer_name)
@@ -244,34 +299,38 @@ class SpendenVoucherCreator(VoucherCreatorBase):
     
     def _determine_donation_type_and_cost_centre(
         self,
-        payment_purpose: str
-    ) -> tuple:
+        payment_purpose: str,
+        payer_name: str = ''
+    ) -> Tuple[str, Dict]:
         """
-        Determine donation type and select appropriate cost centre.
+        Determine donation type and select appropriate cost centre using CSV rules.
+        Rules are checked in priority order (lower priority number = checked first).
+        
+        Args:
+            payment_purpose: Payment purpose text
+            payer_name: Payer name (optional)
         
         Returns:
             Tuple of (donation_type, cost_centre)
         """
-        if not payment_purpose:
-            return ('general', self.cost_centres['general'])
+        # Check type rules in priority order
+        for rule in self.type_rules:
+            if rule.matches(payer_name, payment_purpose or ''):
+                # Found matching rule
+                cost_centre = self.cost_centres.get(rule.cost_centre_name)
+                if cost_centre:
+                    return (rule.donation_type, cost_centre)
+                else:
+                    print(f"⚠️  Warning: Rule matched but cost centre not found: {rule.cost_centre_name}")
         
-        purpose = payment_purpose
-        purpose_lower = payment_purpose.lower()
+        # Fallback: should not happen if rules are properly configured with a catch-all rule
+        print(f"⚠️  Warning: No matching type rule for payer='{payer_name}' purpose='{payment_purpose}'")
+        # Try to return first available cost centre
+        if self.cost_centres:
+            first_cc = next(iter(self.cost_centres.values()))
+            return ('general', first_cc)
         
-        # Special rules for specific donation purposes (checked first)
-        if 'Artur Jeske' in purpose:
-            return ('jeske', self.cost_centres['jeske'])
-        
-        # Check for Tobias Zimmermann donations (multiple patterns)
-        if 'Spende Tobias Zimmermann' in purpose or 'Tobi Zimmermann' in purpose:
-            return ('tobias', self.cost_centres['tobias'])
-        
-        # Check for mission-related keywords
-        if 'mission' in purpose_lower or 'missionar' in purpose_lower:
-            return ('mission', self.cost_centres['mission'])
-        
-        # Default: general donation
-        return ('general', self.cost_centres['general'])
+        raise ValueError("No cost centres available and no matching rule found")
     
     def _find_spenden_contact(self, payee_name: str) -> Optional[Dict]:
         """
